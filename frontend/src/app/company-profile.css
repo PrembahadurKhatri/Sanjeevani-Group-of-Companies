@@ -292,7 +292,42 @@
 .cx-card-placeholder .cxp-icon { width: 56px; height: 56px; }
 
 /* ---------- leadership ---------- */
-.cxp-leaders .cxp-head { margin-bottom: 0; }
+.cxp-leader-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-lg); }
+.cxp-leader { overflow: hidden; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); border: 1px solid var(--bx-rule); border-radius: 26px; background: var(--bx-paper); box-shadow: 0 34px 64px -48px color-mix(in oklab, var(--bx-shade) 60%, transparent); transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short); }
+.cxp-leader:hover { transform: translateY(-4px); box-shadow: 0 44px 80px -50px color-mix(in oklab, var(--bx-shade) 70%, transparent); }
+.cxp-leader-visual { min-height: 330px; position: relative; overflow: hidden; background: radial-gradient(300px 220px at 30% 20%, rgb(196 229 138 / 0.35), transparent 65%), linear-gradient(160deg, #3a7020 0%, #24521a 60%, #153412 100%); }
+.cxp-leader-mark { width: 70%; aspect-ratio: 1; position: absolute; right: -14%; bottom: -10%; opacity: 0.12; }
+.cxp-leader-mark .group-emblem { width: 100%; height: 100%; filter: brightness(0) invert(1); }
+.cxp-leader-photo { position: absolute; inset: 0; }
+.cxp-leader-visual::after { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, rgb(21 52 18 / 0.55) 100%); content: ""; pointer-events: none; }
+.cxp-leader-photo img { object-fit: cover; object-position: center 18%; transition: transform 0.6s var(--ease-out); }
+.cxp-leader:hover .cxp-leader-photo img { transform: scale(1.03); }
+.cxp-leader-role { position: absolute; z-index: 2; top: 16px; left: 16px; padding: 7px 12px; border-radius: var(--radius-pill); background: rgb(255 255 255 / 0.92); color: #24521a; font: 700 0.6875rem/1 var(--bx-body); letter-spacing: 0.12em; text-transform: uppercase; }
+.cxp-leader-info { padding: var(--space-xl); display: flex; flex-direction: column; justify-content: center; gap: var(--space-sm); }
+.cxp-leader-org { color: var(--bx-accent-text); font: 700 0.75rem/1.3 var(--bx-body); letter-spacing: 0.14em; text-transform: uppercase; }
+.cxp-leader-info h3 { color: var(--bx-ink-2); font-size: clamp(1.375rem, 1.2vw + 0.9rem, 1.875rem); font-weight: 600; line-height: 1.15; }
+.cxp-leader-text { color: var(--bx-muted); line-height: 1.65; }
+.cxp-leader.is-pending .cxp-leader-photo img { filter: grayscale(0.2); }
+.cxp-leader.is-pending h3 { color: var(--bx-muted); }
+.cxp-leader-links { margin-top: var(--space-sm); display: flex; flex-wrap: wrap; gap: var(--space-md); }
+.cxp-more.is-quiet { color: var(--bx-muted); }
+.cxp-leaders .cx-tier { margin-top: var(--space-2xl); }
+
+/* ---------- branches ---------- */
+.cxp-branches { margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--space-lg); list-style: none; }
+.cxp-branch { overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--bx-rule); border-radius: 22px; background: var(--bx-paper); transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short); }
+.cxp-branch:hover { transform: translateY(-3px); box-shadow: 0 26px 48px -34px color-mix(in oklab, var(--bx-shade) 55%, transparent); }
+.cxp-branch-photo { aspect-ratio: 16 / 10; position: relative; overflow: hidden; background: linear-gradient(150deg, var(--bx-paper-3), var(--bx-paper-2)); }
+.cxp-branch-photo img { object-fit: cover; transition: transform 0.6s var(--ease-out); }
+.cxp-branch:hover .cxp-branch-photo img { transform: scale(1.04); }
+.cxp-branch-tag { position: absolute; top: 14px; left: 14px; padding: 6px 11px; border-radius: var(--radius-pill); background: rgb(255 255 255 / 0.92); color: #24521a; font: 700 0.6875rem/1 var(--bx-body); letter-spacing: 0.12em; text-transform: uppercase; }
+.cxp-branch-body { flex: 1; padding: var(--space-lg); display: flex; flex-direction: column; gap: 10px; }
+.cxp-branch-body h3 { color: var(--bx-ink-2); font: 600 var(--text-title)/1.3 var(--bx-display); }
+.cxp-branch-line { display: flex; align-items: flex-start; gap: 8px; color: var(--bx-muted); font-size: var(--text-sm); line-height: 1.5; }
+.cxp-branch-line .cxp-icon { width: 17px; height: 17px; margin-top: 1px; color: var(--bx-accent-text); }
+.cxp-branch-line a { color: var(--bx-ink); text-decoration: none; }
+.cxp-branch-line a:hover { color: var(--bx-accent-text); text-decoration: underline; }
+.cxp-branch-actions { margin-top: auto; padding-top: var(--space-sm); display: flex; flex-wrap: wrap; gap: var(--space-md); }
 
 /* ---------- careers band ---------- */
 .cxp-careers { background: radial-gradient(900px 420px at 0% 0%, rgb(196 229 138 / 0.18), transparent 60%), linear-gradient(135deg, #0f240e 0%, #1d4416 55%, #2f5c1a 100%); color: #eef6e6; }
@@ -345,6 +380,7 @@
   .cxp-intro-actions { grid-column: 1 / -1; justify-content: flex-start; }
   .cxp-overview-grid, .cxp-careers-grid, .cxp-contact-grid { grid-template-columns: 1fr; }
   .cxp-careers-grid { justify-items: stretch; text-align: left; }
+  .cxp-leader-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 40rem) {
   .cxp-intro { margin-top: -56px; }
@@ -359,6 +395,9 @@
   .cxp-glance, .cxp-purpose-card, .cxp-contact-card { padding: var(--space-lg); border-radius: 20px; }
   .cxp-glance dl > div { grid-template-columns: 1fr; gap: 4px; }
   .cxp-quote { padding: var(--space-lg); }
+  .cxp-leader { grid-template-columns: 1fr; }
+  .cxp-leader-visual { min-height: 300px; }
+  .cxp-leader-info { padding: var(--space-lg); }
   .cxp-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
   .cxp-tiles li { min-height: 0; padding: var(--space-md); gap: var(--space-md); border-radius: 16px; }
   .cxp-tiles strong { font-size: 1rem; }
@@ -366,5 +405,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .cxp-reveal { opacity: 1; transform: none; transition: none; }
-  .cxp-explore a, .cxp-tiles li, .cxp-offering, .cxp-offering-media img { transition: none; }
+  .cxp-explore a, .cxp-tiles li, .cxp-offering, .cxp-offering-media img, .cxp-leader, .cxp-leader-photo img, .cxp-branch, .cxp-branch-photo img { transition: none; }
 }

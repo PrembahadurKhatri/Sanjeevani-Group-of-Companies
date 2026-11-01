@@ -146,6 +146,8 @@ export const locationsSchema = z.object({
         longitude: coordinate(-180, 180),
         phone,
         email,
+        imageId: z.string().uuid().nullable().optional(),
+        websiteUrl: website,
         isPrimary: z.boolean().optional(),
       }),
     )

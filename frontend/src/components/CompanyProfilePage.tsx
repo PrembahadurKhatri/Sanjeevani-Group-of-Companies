@@ -109,6 +109,31 @@ function LeaderCard({ person }: { person: ProfileLeader }) {
   );
 }
 
+// A leader on the company page: portrait on a green panel, then name, role
+// and a short line, with a link to the full profile when there is one.
+function LeaderFeature({ photo, name, role, org, text, href, linkedin, pending }: { photo: string; name: string; role: string; org: string; text: string; href?: string; linkedin?: string; pending?: boolean }) {
+  return (
+    <article className={`cxp-leader${pending ? " is-pending" : ""}`}>
+      <div className="cxp-leader-visual">
+        <span className="cxp-leader-mark" aria-hidden="true"><GroupEmblem /></span>
+        <div className="cxp-leader-photo"><Image src={photo} alt={pending ? "" : name} fill sizes="(max-width: 780px) 80vw, 320px" unoptimized={remote(photo)} /></div>
+        <span className="cxp-leader-role">{role}</span>
+      </div>
+      <div className="cxp-leader-info">
+        <p className="cxp-leader-org">{org}</p>
+        <h3>{name}</h3>
+        <p className="cxp-leader-text">{text}</p>
+        {(href || linkedin) && (
+          <div className="cxp-leader-links">
+            {href && <Link className="cxp-more" href={href}>View profile <Icon name="arrow" /></Link>}
+            {linkedin && <a className="cxp-more is-quiet" href={linkedin} target="_blank" rel="noopener noreferrer">LinkedIn <Icon name="arrow" /></a>}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function ContactForm({ companySlug, companyName }: { companySlug: string; companyName: string }) {
   const [state, setState] = useState<{ busy: boolean; ok: boolean; message: string }>({ busy: false, ok: false, message: "" });
 
@@ -162,7 +187,8 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
   const md = data.leaders.flatMap((g) => g.people).find((p) => p.managingDirector);
   const mdPhoto = md?.photo?.url ?? data.chairman?.photo?.url ?? "/chairman.png";
   const primary = c.locations.find((l) => l.isPrimary) ?? c.locations[0];
-  const otherLocations = c.locations.filter((l) => l !== primary);
+  const branches = c.locations.filter((l) => l !== primary);
+  const otherLocations = has("branches") ? [] : branches;
   const phone = c.phone ?? primary?.phone ?? null;
   const email = c.email ?? primary?.email ?? "info@sanjeevanigroup.com";
   const address = primary?.address || c.headquarters || "Nepal";
@@ -181,6 +207,7 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
     const match = /^([\d][\d,.]*\+?)\s*(.*)$/.exec(fact.value);
     if (match) stats.push({ value: match[1], label: fact.label, note: match[2] || undefined });
   }
+  if (c.locations.length > 1) stats.push({ value: String(c.locations.length), label: "Locations" });
   if (serviceCount > 1) stats.push({ value: String(serviceCount), label: label("services") });
   if (data.vacancies.length) stats.push({ value: String(data.vacancies.length), label: data.vacancies.length === 1 ? "Open role" : "Open roles" });
 
@@ -318,35 +345,27 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       </section>
     ),
     leadership: () => (
-      <section className="cx-leaders cx-block cxp-leaders" id="leadership" aria-labelledby="leadership-title">
+      <section className="cxp-section cxp-tint cx-block cxp-leaders" id="leadership" aria-labelledby="leadership-title">
         <div className="bx-wrap">
           <div className="cxp-reveal"><SectionHead id="leadership" eyebrow={EYEBROW.leadership} label={label("leadership")} intro={`The people guiding ${c.shortName ?? c.name} as part of Sanjeevani Group.`} /></div>
-          <div className="cx-leader-grid cxp-reveal">
-            {/* Both cards follow the Leadership page's chairman panel. */}
-            <article className="cx-leader">
-              <div className="cx-leader-photo">
-                <Image src={data.chairman?.photo?.url ?? "/chairman.png"} alt={data.chairman?.name ?? "C.A. Khuma Parsad Aryal"} fill sizes="(max-width: 780px) 70vw, 300px" unoptimized={remote(data.chairman?.photo?.url ?? "")} />
-              </div>
-              <div className="cx-leader-copy">
-                <h3>{data.chairman?.name ?? "C.A. Khuma Parsad Aryal"}</h3>
-                <p className="cx-leader-role">Chairman</p>
-                <p className="cx-leader-org">Sanjeevani Group</p>
-                <Link className="cx-leader-link" href="/chairman">View details</Link>
-              </div>
-              <span className="cx-leader-mark" aria-hidden="true"><GroupEmblem /></span>
-            </article>
-            <article className="cx-leader">
-              <div className="cx-leader-photo">
-                {/* The Managing Director shows the Chairman's portrait until their own photo is added. */}
-                <Image src={mdPhoto} alt={md?.name ?? "Managing director"} fill sizes="(max-width: 780px) 70vw, 300px" unoptimized={remote(mdPhoto)} />
-              </div>
-              <div className="cx-leader-copy">
-                <h3>{md?.name ?? "To be announced"}</h3>
-                <p className="cx-leader-role">Managing Director</p>
-                <p className="cx-leader-org">{c.name}</p>
-              </div>
-              <span className="cx-leader-mark" aria-hidden="true"><GroupEmblem /></span>
-            </article>
+          <div className="cxp-leader-grid cxp-reveal">
+            <LeaderFeature
+              photo={data.chairman?.photo?.url ?? "/chairman.png"}
+              name={data.chairman?.name ?? "C.A. Khuma Parsad Aryal"}
+              role="Chairman"
+              org="Sanjeevani Group"
+              text={`Leads Sanjeevani Group, the family of businesses that ${c.name} belongs to.`}
+              href="/chairman"
+            />
+            <LeaderFeature
+              photo={mdPhoto}
+              name={md?.name ?? "To be announced"}
+              role="Managing Director"
+              org={c.name}
+              text={md?.summary ?? (md ? `Leads ${c.shortName ?? c.name} day to day.` : `The Managing Director of ${c.shortName ?? c.name} will be introduced here soon.`)}
+              linkedin={md?.linkedin ?? undefined}
+              pending={!md}
+            />
           </div>
           {data.leaders.map((group) => {
             const people = group.people.filter((p) => p !== md);
@@ -358,6 +377,35 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
               </div>
             );
           })}
+        </div>
+      </section>
+    ),
+    branches: () => (
+      <section className="cxp-section cx-block" id="branches" aria-labelledby="branches-title">
+        <div className="bx-wrap">
+          <div className="cxp-reveal"><SectionHead id="branches" eyebrow="Where to find us" label={label("branches")} intro={branches.length ? `${c.shortName ?? c.name} serves people from ${branches.length + 1} locations.` : undefined} /></div>
+          {branches.length ? (
+            <ul className="cxp-branches cxp-reveal">
+              {branches.map((b) => (
+                <li key={b.name + b.address} className="cxp-branch">
+                  <div className="cxp-branch-photo">
+                    {b.image ? <Photo image={b.image} sizes="(max-width: 640px) 92vw, 380px" /> : c.banner ? <Photo image={{ url: c.banner.url, alt: "" }} sizes="(max-width: 640px) 92vw, 380px" /> : null}
+                    <span className="cxp-branch-tag">Branch</span>
+                  </div>
+                  <div className="cxp-branch-body">
+                    <h3>{b.name}</h3>
+                    {b.address && <p className="cxp-branch-line"><Icon name="pin" />{b.address}</p>}
+                    {b.phone && <p className="cxp-branch-line"><Icon name="phone" /><a href={`tel:${b.phone.replace(/\s+/g, "")}`}>{b.phone}</a></p>}
+                    {b.email && <p className="cxp-branch-line"><Icon name="mail" /><a href={`mailto:${b.email}`}>{b.email}</a></p>}
+                    <div className="cxp-branch-actions">
+                      {b.website && <a className="cxp-more" href={b.website} target="_blank" rel="noopener noreferrer">Visit website <Icon name="arrow" /><span className="visually-hidden"> of {b.name}</span></a>}
+                      <a className="cxp-more is-quiet" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name} ${b.name}, ${b.address}`)}`} target="_blank" rel="noopener noreferrer">Directions <Icon name="arrow" /></a>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="cx-empty">Our branches will be listed here.</p>}
         </div>
       </section>
     ),
@@ -527,6 +575,7 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
     if (has("about")) tiles.push({ key: "about", icon: "eye", text: c.mission ? "Mission, vision and story" : "Our story" });
     if (has("services") && serviceCount) tiles.push({ key: "services", icon: "spark", text: `${serviceCount} ${label("services").toLowerCase()}` });
     if (has("leadership")) tiles.push({ key: "leadership", icon: "users", text: md ? `${md.name}, Managing Director` : "Chairman and leadership team" });
+    if (has("branches") && branches.length) tiles.push({ key: "branches", icon: "pin", text: `${branches.length} ${branches.length === 1 ? "branch" : "branches"}` });
     if (has("projects") && data.achievements.length) tiles.push({ key: "projects", icon: "award", text: `${data.achievements.length} highlights` });
     if (has("news") && data.news.length) tiles.push({ key: "news", icon: "news", text: data.news[0].title });
     if (has("careers")) tiles.push({ key: "careers", icon: "briefcase", text: data.vacancies.length ? `${data.vacancies.length} open ${data.vacancies.length === 1 ? "role" : "roles"}` : "Work with us" });

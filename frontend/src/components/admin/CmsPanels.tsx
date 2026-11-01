@@ -272,7 +272,7 @@ const SERVICES_FIELDS: Field[] = [
   { k: "services", label: "Simple list", type: "lines", help: "One per line. Shown only while there are no detailed items below." },
 ];
 const CONTACT_FIELDS: Field[] = [
-  { k: "s-offices", label: "Offices", type: "section", help: "Email, phone and website are under Basic information." },
+  { k: "s-offices", label: "Offices", type: "section", help: "Email, phone and website are under Basic information. The main office and branches are under Branches." },
   { k: "registeredAddress", label: "Registered office address", type: "text" },
   { k: "officeHours", label: "Office hours", type: "text", help: "e.g. Sunday to Friday, 9am to 5pm" },
   { k: "mapUrl", label: "Map on the page", type: "textarea", help: "In Google Maps, find the office, choose Share → Embed a map, copy the HTML and paste it here. Until then the Sanjeevani Group map is shown." },
@@ -293,25 +293,28 @@ const SEO_FIELDS: Field[] = [
 ];
 // All company fields, for converting to and from the API in one go.
 const COMPANY_FIELDS: Field[] = [...BASIC_FIELDS, ...OVERVIEW_FIELDS, ...ABOUT_FIELDS, ...SERVICES_FIELDS, ...CONTACT_FIELDS, ...SEO_FIELDS];
-const FIELD_TABS: Record<string, Field[]> = { basic: BASIC_FIELDS, overview: OVERVIEW_FIELDS, about: ABOUT_FIELDS, services: SERVICES_FIELDS, contact: CONTACT_FIELDS, seo: SEO_FIELDS };
+const FIELD_TABS: Record<string, Field[]> = { basic: BASIC_FIELDS, overview: OVERVIEW_FIELDS, about: ABOUT_FIELDS, services: SERVICES_FIELDS, branches: [], contact: CONTACT_FIELDS, seo: SEO_FIELDS };
 const COMPANY_TABS: [string, string][] = [
-  ["basic", "Basic information"], ["overview", "Overview"], ["about", "About us"], ["services", "Services / Products"], ["leadership", "Leadership"],
+  ["basic", "Basic information"], ["overview", "Overview"], ["about", "About us"], ["services", "Services / Products"], ["leadership", "Leadership"], ["branches", "Branches"],
   ["businesses", "Businesses"], ["projects", "Projects & achievements"], ["news", "News & updates"], ["careers", "Careers"], ["gallery", "Gallery"],
   ["contact", "Contact information"], ["seo", "SEO & publishing"],
 ];
 const LOCATION_FIELDS: Field[] = [
   {
-    k: "locations", label: "Offices and addresses", type: "rows", add: "Add a location",
-    blank: { name: "Head office", addressLine: "", municipality: "", district: "", province: "", phone: "", email: "", isPrimary: false },
+    k: "locations", label: "Main office and branches", type: "rows", add: "Add a branch",
+    help: "Tick Main office for the headquarters. Every other entry is shown as a branch card, with its photo and website when given.",
+    blank: { name: "", imageId: null, addressLine: "", municipality: "", district: "", province: "", phone: "", email: "", websiteUrl: "", isPrimary: false },
     fields: [
-      { k: "name", label: "Name", type: "text", required: true },
+      { k: "name", label: "Branch name", type: "text", required: true },
+      { k: "imageId", label: "Branch photo", type: "image", rel: "image", folder: "companies" },
       { k: "addressLine", label: "Address", type: "text" },
       { k: "municipality", label: "Municipality", type: "text" },
       { k: "district", label: "District", type: "text" },
       { k: "province", label: "Province", type: "text" },
       { k: "phone", label: "Phone", type: "text" },
       { k: "email", label: "Email", type: "email" },
-      { k: "isPrimary", label: "Main office", type: "checkbox" },
+      { k: "websiteUrl", label: "Website (if any)", type: "text", help: "e.g. www.example.com" },
+      { k: "isPrimary", label: "Main office (headquarters)", type: "checkbox" },
     ],
   },
 ];
@@ -472,7 +475,7 @@ export function BusinessesPanel({ me }: { me: Me }) {
               {fieldTab && (
                 <div className="admin-form-grid">
                   <FieldInputs fields={fieldTab} values={editing.values} onChange={update} lookups={lookups} altFrom={String(editing.values.name ?? "")} idPrefix={`co-${formTab}`} />
-                  {formTab === "contact" && <FieldInputs fields={LOCATION_FIELDS} values={editing.locations} onChange={(locations) => setEditing({ ...editing, locations })} lookups={lookups} altFrom="" idPrefix="co-loc" />}
+                  {formTab === "branches" && <FieldInputs fields={LOCATION_FIELDS} values={editing.locations} onChange={(locations) => setEditing({ ...editing, locations })} lookups={lookups} altFrom="" idPrefix="co-loc" />}
                   {formTab === "seo" && <SectionsEditor value={editing.sections} servicesTitle={String(editing.values.servicesTitle ?? "")} onChange={(sections) => setEditing({ ...editing, sections })} />}
                 </div>
               )}

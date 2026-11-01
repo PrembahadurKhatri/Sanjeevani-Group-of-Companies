@@ -1,7 +1,7 @@
 // Which sections a company's profile page shows, in what order and under what
 // labels. Shared by the admin form and the public page (no I/O).
 
-export const SECTION_KEYS = ["overview", "about", "services", "leadership", "businesses", "projects", "news", "careers", "gallery", "contact"] as const;
+export const SECTION_KEYS = ["overview", "about", "services", "leadership", "branches", "businesses", "projects", "news", "careers", "gallery", "contact"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 
 export type SectionSetting = { key: SectionKey; enabled: boolean; label?: string; showEmpty?: boolean };
@@ -15,6 +15,7 @@ export const SECTION_DEFAULTS: Record<SectionKey, { label: string; enabled: bool
   about: { label: "About us", enabled: true, showEmpty: false },
   services: { label: "Services", enabled: true, showEmpty: false },
   leadership: { label: "Leadership", enabled: true, showEmpty: true },
+  branches: { label: "Our branches", enabled: true, showEmpty: false },
   businesses: { label: "Our businesses", enabled: true, showEmpty: false },
   projects: { label: "Projects & achievements", enabled: true, showEmpty: false },
   news: { label: "News & updates", enabled: true, showEmpty: false },
@@ -27,8 +28,8 @@ const isKey = (value: unknown): value is SectionKey => typeof value === "string"
 
 // The stored settings (any order, possibly missing sections or written by an
 // older version) merged with the defaults: every section exactly once, in the
-// stored order, with sections the company has never set appended in their
-// default place at the end.
+// stored order. A section the company has never set (such as one added in a
+// later version) goes right after the section that precedes it by default.
 export function resolveSections(stored: unknown, servicesTitle?: string | null): ResolvedSection[] {
   const list = Array.isArray(stored) ? stored : [];
   const seen = new Set<SectionKey>();
@@ -45,7 +46,13 @@ export function resolveSections(stored: unknown, servicesTitle?: string | null):
       showEmpty: typeof entry.showEmpty === "boolean" ? entry.showEmpty : undefined,
     });
   }
-  for (const key of SECTION_KEYS) if (!seen.has(key)) ordered.push({ key, enabled: SECTION_DEFAULTS[key].enabled });
+  for (const [index, key] of SECTION_KEYS.entries()) {
+    if (seen.has(key)) continue;
+    const before = SECTION_KEYS.slice(0, index).reverse().find((k) => ordered.some((s) => s.key === k));
+    const at = before ? ordered.findIndex((s) => s.key === before) + 1 : 0;
+    ordered.splice(at, 0, { key, enabled: SECTION_DEFAULTS[key].enabled });
+    seen.add(key);
+  }
 
   return ordered.map((s) => {
     const core = CORE_SECTIONS.includes(s.key);

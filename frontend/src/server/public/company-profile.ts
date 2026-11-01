@@ -31,7 +31,7 @@ export type CompanyProfileData = {
     website: string | null; email: string | null; phone: string | null;
     registeredAddress: string | null; officeHours: string | null; mapUrl: string | null;
     social: { label: string; href: string }[];
-    locations: { name: string; address: string; phone: string | null; email: string | null; isPrimary: boolean }[];
+    locations: { name: string; address: string; phone: string | null; email: string | null; isPrimary: boolean; image: Img; website: string | null }[];
   };
   sections: ResolvedSection[];
   offerings: { slug: string; title: string; summary: string | null; image: Img; hasDetail: boolean }[];
@@ -72,7 +72,7 @@ export async function loadCompanyProfile(slug: string, options: { preview?: bool
       sector: { select: { slug: true, name: true } },
       logo: image,
       banner: image,
-      locations: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }] },
+      locations: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }], include: { image } },
       offerings: { where: { status: shown }, include: { image }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }] },
       achievements: { where: { status: shown }, include: { image }, orderBy: [{ sortOrder: "asc" }, { date: "desc" }] },
       relations: {
@@ -166,7 +166,10 @@ export async function loadCompanyProfile(slug: string, options: { preview?: bool
       officeHours: company.officeHours,
       mapUrl: company.mapUrl,
       social,
-      locations: company.locations.map((l) => ({ name: l.name, address: address(l), phone: l.phone, email: l.email, isPrimary: l.isPrimary })),
+      locations: company.locations.map((l) => ({
+        name: l.name, address: address(l), phone: l.phone, email: l.email, isPrimary: l.isPrimary,
+        image: img(l.image, l.name), website: toWebsiteUrl(l.websiteUrl ?? undefined) ?? null,
+      })),
     },
     sections: [],
     offerings: company.offerings.map((o) => ({ slug: o.slug, title: o.title, summary: o.summary, image: img(o.image, o.title), hasDetail: Boolean(o.body?.trim()) })),
@@ -204,6 +207,7 @@ export async function loadCompanyProfile(slug: string, options: { preview?: bool
     about: Boolean(data.company.background || data.company.history || data.company.mission || data.company.vision || data.company.coreValues.length || data.company.philosophy || data.milestones.length),
     services: data.offerings.length > 0 || data.company.services.length > 0,
     leadership: true, // the Chairman is shown on every company page
+    branches: company.locations.length > 1,
     businesses: data.relations.length > 0,
     projects: data.achievements.length > 0,
     news: data.news.length > 0,

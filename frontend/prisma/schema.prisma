@@ -332,22 +332,26 @@ model CompanyRelation {
 }
 
 model Location {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  companyId    String    @db.Uuid
-  company      Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId    String      @db.Uuid
+  company      Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
   name         String // e.g. "Main campus"
   addressLine  String?
   municipality String?
   district     String?
   province     String?
-  country      String    @default("Nepal")
-  latitude     Decimal?  @db.Decimal(9, 6)
-  longitude    Decimal?  @db.Decimal(9, 6)
+  country      String      @default("Nepal")
+  latitude     Decimal?    @db.Decimal(9, 6)
+  longitude    Decimal?    @db.Decimal(9, 6)
   phone        String?
   email        String?
-  isPrimary    Boolean   @default(false)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  // Branch card on the company page
+  imageId      String?     @db.Uuid
+  image        MediaAsset? @relation("LocationImage", fields: [imageId], references: [id], onDelete: SetNull)
+  websiteUrl   String?
+  isPrimary    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
   vacancies    Vacancy[]
 
   @@index([companyId])
@@ -492,6 +496,7 @@ model MediaAsset {
   companyLogos     Company[]            @relation("CompanyLogo")
   companyBanners   Company[]            @relation("CompanyBanner")
   companyShares    Company[]            @relation("CompanyShareImage")
+  locationImages   Location[]           @relation("LocationImage")
   offeringImages   CompanyOffering[]    @relation("CompanyOfferingImage")
   achievementImgs  CompanyAchievement[] @relation("CompanyAchievementImage")
   relationLogos    CompanyRelation[]    @relation("CompanyRelationLogo")

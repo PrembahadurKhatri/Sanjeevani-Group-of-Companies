@@ -19,7 +19,7 @@ const companyInclude = {
   logo: image,
   banner: image,
   shareImage: image,
-  locations: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }] },
+  locations: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }], include: { image } },
 } satisfies Prisma.CompanyInclude;
 
 type CompanyRow = Prisma.CompanyGetPayload<{ include: typeof companyInclude }>;
@@ -255,6 +255,10 @@ export async function replaceLocations(user: SessionUser, id: string, locations:
     const removedInUse = used.filter((l) => !keptNames.has(l.name.toLowerCase()));
     if (removedInUse.length) throw conflict(`"${removedInUse[0].name}" is used by vacancies. Move those vacancies first.`);
 
+    for (const imageId of new Set(locations.map((l) => l.imageId).filter((v): v is string => Boolean(v)))) {
+      const media = await tx.mediaAsset.findUnique({ where: { id: imageId }, select: { kind: true } });
+      if (!media || media.kind !== "IMAGE") throw badRequest("A branch photo no longer exists. Choose it again.");
+    }
     await tx.contentRevision.create({ data: { entityType: "Company", entityId: id, snapshot: snapshot(before), createdById: user.id } });
     const normalized = normalizeLocations(locations);
     const existing = new Map(before.locations.map((l) => [l.name.toLowerCase(), l.id]));

@@ -10,16 +10,22 @@ describe("company page sections", () => {
     assert.deepEqual(sections.map((s) => s.key), [...SECTION_KEYS]);
     assert.equal(sections[0].label, "Overview");
   });
-  it("keeps a company's own order, labels and switches, and appends new sections", () => {
+  it("keeps a company's own order, labels and switches, and adds missing sections", () => {
     const sections = resolveSections([
       { key: "gallery", enabled: true, label: "Photos" },
       { key: "about", enabled: false },
       { key: "overview", enabled: true },
     ]);
-    assert.deepEqual(sections.slice(0, 3).map((s) => s.key), ["gallery", "about", "overview"]);
+    const keys = sections.map((s) => s.key);
+    assert.ok(keys.indexOf("gallery") < keys.indexOf("about") && keys.indexOf("about") < keys.indexOf("overview"), "stored order kept");
     assert.equal(sections[0].label, "Photos");
-    assert.equal(sections[1].enabled, false);
+    assert.equal(sections.find((s) => s.key === "about")!.enabled, false);
     assert.equal(sections.length, SECTION_KEYS.length);
+  });
+  it("puts a section added later in its default place, not at the end", () => {
+    const keys = resolveSections([{ key: "overview", enabled: true }, { key: "leadership", enabled: true }, { key: "contact", enabled: true }]).map((s) => s.key);
+    assert.equal(keys.indexOf("branches"), keys.indexOf("leadership") + 1);
+    assert.equal(keys[keys.length - 1], "contact");
   });
   it("never turns off Overview or Get in touch", () => {
     const sections = resolveSections([{ key: "overview", enabled: false }, { key: "contact", enabled: false }]);
