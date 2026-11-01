@@ -78,6 +78,7 @@ const news = strictBoth(
     seoTitle: optionalStr(70),
     seoDescription: optionalStr(160),
     publishAt: z.string().datetime().nullable(),
+    linkUrl: hrefSchema.nullable().optional(),
   },
   ["title"],
 );
@@ -93,6 +94,7 @@ const event = strictBoth(
     endsAt: z.string().datetime().nullable(),
     coverImageId: uuidOrNull,
     companyId: uuidOrNull,
+    linkUrl: hrefSchema.nullable().optional(),
   },
   ["title", "startsAt"],
 );
@@ -173,7 +175,7 @@ export const CONTENT_TYPES = {
   },
   news: {
     model: "newsArticle", scope: "company", stamps: "approve", label: "News article", update: "content.update", publish: "content.publish", ...news,
-    toData: (i) => ({ ...pick(i, ["slug", "type", "title", "excerpt", "body", "coverImageId", "companyId", "categoryId", "tags", "seoTitle", "seoDescription"]), publishAt: dateField(i.publishAt) }),
+    toData: (i) => ({ ...pick(i, ["slug", "type", "title", "excerpt", "body", "coverImageId", "companyId", "categoryId", "tags", "seoTitle", "seoDescription", "linkUrl"]), publishAt: dateField(i.publishAt) }),
     owners: companyOwner, slugFrom: "title", publicKey: "slug",
     include: { coverImage: image, company: { select: { id: true, name: true, slug: true } }, category: { select: { slug: true, name: true } } },
     orderBy: [{ publishedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
@@ -182,7 +184,7 @@ export const CONTENT_TYPES = {
   },
   events: {
     model: "event", scope: "company", stamps: "approve", label: "Event", update: "content.update", publish: "content.publish", ...event,
-    toData: (i) => ({ ...pick(i, ["slug", "title", "summary", "body", "venue", "coverImageId", "companyId"]), startsAt: dateField(i.startsAt), endsAt: dateField(i.endsAt) }),
+    toData: (i) => ({ ...pick(i, ["slug", "title", "summary", "body", "venue", "coverImageId", "companyId", "linkUrl"]), startsAt: dateField(i.startsAt), endsAt: dateField(i.endsAt) }),
     owners: companyOwner, slugFrom: "title", publicKey: "slug",
     include: { coverImage: image, company: { select: { id: true, name: true, slug: true } } },
     orderBy: [{ startsAt: "desc" }], mediaIds: (i) => [...ids(i.coverImageId), ...blockMediaIds(i.body as Block[] | null)],

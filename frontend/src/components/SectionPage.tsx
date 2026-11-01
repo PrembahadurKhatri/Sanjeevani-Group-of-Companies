@@ -711,7 +711,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
               <div className="mission-hero-copy">
                 {!article && <h1 className="visually-hidden">{newsKind ? `${newsKind.title} | Newsroom` : "Newsroom"}</h1>}
                 <span className="mission-hero-tag">{newsKind?.title ?? "Newsroom"}</span>
-                <p className="mission-hero-text">{newsKind ? `${newsKind.title} from Sanjeevani Group and its businesses.` : page.intro}</p>
+                <p className="mission-hero-text">{article ? article.title : newsKind ? `${newsKind.title} from Sanjeevani Group and its businesses.` : page.intro}</p>
               </div>
             ) : section === "gallery" ? (
               <div className="mission-hero-copy">

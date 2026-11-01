@@ -130,6 +130,7 @@ const NEWSROOM: Record<string, ContentConfig> = {
       { k: "excerpt", label: "Summary", type: "textarea", help: "Shown in the newsroom list." },
       { k: "body", label: "Full text", type: "blocks", help: "Leave a blank line between paragraphs." },
       { k: "tags", label: "Tags", type: "lines", help: "One per line." },
+      { k: "linkUrl", label: "Link (optional)", type: "url", help: "The original article or more information. Shown as a Read more button on the story page." },
       { k: "publishAt", label: "Publish on (optional)", type: "datetime", help: "Leave empty to publish as soon as you press Save and publish." },
     ],
   },
@@ -146,6 +147,7 @@ const NEWSROOM: Record<string, ContentConfig> = {
       { k: "coverImageId", label: "Photo", type: "image", rel: "coverImage", folder: "news" },
       { k: "summary", label: "Summary", type: "textarea" },
       { k: "body", label: "Details", type: "blocks", help: "Leave a blank line between paragraphs." },
+      { k: "linkUrl", label: "Link (optional)", type: "url", help: "Registration or more information. Shown as a button on the event page." },
     ],
   },
   notices: {

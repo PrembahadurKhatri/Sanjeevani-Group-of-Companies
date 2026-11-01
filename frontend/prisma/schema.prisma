@@ -786,6 +786,7 @@ model NewsArticle {
   author         User?         @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   seoTitle       String?
   seoDescription String?
+  linkUrl        String? // optional outside link: original article, registration, more information
   status         PublishStatus @default(DRAFT)
   publishAt      DateTime?
   publishedAt    DateTime?
@@ -807,6 +808,7 @@ model Event {
   summary      String?
   body         Json?
   venue        String?
+  linkUrl      String? // optional outside link: original article, registration, more information
   startsAt     DateTime
   endsAt       DateTime?
   coverImageId String?       @db.Uuid

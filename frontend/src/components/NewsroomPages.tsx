@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import type { Story } from "@/server/public/newsroom";
 import type { ArticleData } from "@/server/public/newsroom";
 import type { CompanyOfferingData } from "@/server/public/company-profile";
@@ -137,29 +137,99 @@ function ArticleBlock({ block }: { block: Block }) {
   return block.text ? <p>{block.text}</p> : null;
 }
 
-export function NewsArticle({ article, kind, kindTitle }: { article: ArticleData; kind: string; kindTitle: string }) {
+// Share links are built in the browser from the page's own address.
+function ShareStory({ title }: { title: string }) {
+  const [url, setUrl] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => setUrl(window.location.href), []);
+  const u = encodeURIComponent(url);
+  const t = encodeURIComponent(title);
+  const links = [
+    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+    { label: "X", href: `https://x.com/intent/post?url=${u}&text=${t}` },
+    { label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+    { label: "WhatsApp", href: `https://wa.me/?text=${t}%20${u}` },
+  ];
   return (
-    <article className="newsroom nr-article">
-      <div className="reference-wrap nr-article-wrap">
+    <div className="nr-share">
+      <span>Share</span>
+      {url && links.map((l) => <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>)}
+      <button type="button" onClick={() => { void navigator.clipboard?.writeText(url).then(() => setCopied(true)); }}>{copied ? "Link copied" : "Copy link"}</button>
+    </div>
+  );
+}
+
+const STORY_ICON: Record<string, JSX.Element> = {
+  date: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  pin: <><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" /><circle cx="12" cy="9.5" r="2.5" /></>,
+  kind: <><path d="M4 5h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5Z" /><path d="M17 9h3v10a2 2 0 0 1-2 2M8 9h5M8 13h5" /></>,
+  company: <><path d="M4 21V5l8-3v19M12 21h8V9l-8-3" /></>,
+};
+
+// One story's page: a news article, press release or event.
+export function NewsArticle({ article, kind, kindTitle }: { article: ArticleData; kind: string; kindTitle: string }) {
+  const facts: { icon: string; label: string; value: ReactNode }[] = [
+    { icon: "date", label: kind === "events" ? "Date" : "Published", value: article.date },
+    ...(article.when && article.when !== article.date ? [{ icon: "clock", label: "When", value: article.when }] : []),
+    ...(article.venue ? [{ icon: "pin", label: "Venue", value: article.venue }] : []),
+    { icon: "kind", label: "Category", value: kindTitle },
+    ...(article.company ? [{ icon: "company", label: "Company", value: <Link href={`/businesses/${article.company.slug}`}>{article.company.name}</Link> }] : []),
+  ];
+  const external = article.link && /^https?:/.test(article.link);
+  return (
+    <article className="newsroom nr-story">
+      <div className="reference-wrap">
         <nav className="nr-breadcrumb" aria-label="Breadcrumb">
           <Link href="/newsroom">Newsroom</Link><span aria-hidden="true">/</span><Link href={`/newsroom/${kind}`}>{kindTitle}</Link>
         </nav>
-        <header className="nr-article-head">
-          <time>{article.date}</time>
-          <h2>{article.title}</h2>
-          {article.excerpt && <p className="nr-article-lead">{article.excerpt}</p>}
-          {article.company && <p className="nr-article-company">From <Link href={`/businesses/${article.company.slug}`}>{article.company.name}</Link></p>}
-        </header>
-        {article.cover && (
-          <div className="nr-article-cover">
-            <Image src={article.cover.url} alt={article.cover.alt} fill priority sizes="(max-width: 900px) 100vw, 860px" unoptimized={remote(article.cover.url)} />
+        <div className="nr-story-grid">
+          <div className="nr-story-main">
+            <header className="nr-story-head">
+              <p className="nr-story-meta"><span className="nr-story-badge">{kindTitle}</span><time>{article.date}</time></p>
+              <h1>{article.title}</h1>
+              {article.excerpt && <p className="nr-article-lead">{article.excerpt}</p>}
+            </header>
+            {article.cover && (
+              <div className="nr-article-cover">
+                <Image src={article.cover.url} alt={article.cover.alt} fill priority sizes="(max-width: 1000px) 100vw, 760px" unoptimized={remote(article.cover.url)} />
+              </div>
+            )}
+            <div className="nr-article-body">
+              {(article.blocks as Block[]).map((block, index) => <ArticleBlock key={index} block={block} />)}
+            </div>
+            {article.tags.length > 0 && <ul className="nr-article-tags">{article.tags.map((t) => <li key={t}>{t}</li>)}</ul>}
+            <ShareStory title={article.title} />
           </div>
-        )}
-        <div className="nr-article-body">
-          {(article.blocks as Block[]).map((block, index) => <ArticleBlock key={index} block={block} />)}
+          <aside className="nr-story-side">
+            <div className="nr-story-card">
+              <h2>{kind === "events" ? "Event details" : "Story details"}</h2>
+              <dl>
+                {facts.map((f) => (
+                  <div key={f.label}>
+                    <dt><svg viewBox="0 0 24 24" aria-hidden="true">{STORY_ICON[f.icon]}</svg>{f.label}</dt>
+                    <dd>{f.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              {article.link && (
+                <a className="nr-story-cta" href={article.link} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+                  {kind === "events" ? "More information" : "Read the full story"} <span aria-hidden="true">{external ? "↗" : "→"}</span>
+                </a>
+              )}
+              <Link className="nr-story-back" href={`/newsroom/${kind}`}>← All {kindTitle.toLowerCase()}</Link>
+            </div>
+          </aside>
         </div>
-        {article.tags.length > 0 && <ul className="nr-article-tags">{article.tags.map((t) => <li key={t}>{t}</li>)}</ul>}
-        <p><Link className="newsroom-card-link" href={`/newsroom/${kind}`}>← All {kindTitle.toLowerCase()}</Link></p>
+        {article.related.length > 0 && (
+          <section className="newsroom-group nr-story-related" aria-labelledby="related-title">
+            <div className="newsroom-group-heading">
+              <h2 id="related-title">More {kindTitle.toLowerCase()}</h2>
+              <Link className="newsroom-card-link" href={`/newsroom/${kind}`}>View all <span aria-hidden="true">→</span></Link>
+            </div>
+            <NewsroomCards stories={article.related} />
+          </section>
+        )}
       </div>
     </article>
   );

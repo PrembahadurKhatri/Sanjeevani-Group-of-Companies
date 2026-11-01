@@ -25,13 +25,19 @@ export type NewsroomData = {
 export const NEWS_KINDS = {
   news: { title: "News", types: ["NEWS", "ANNOUNCEMENT"] as const },
   "press-releases": { title: "Press releases", types: ["PRESS_RELEASE"] as const },
+  events: { title: "Events", types: [] as const },
 } as const;
 export type NewsKind = keyof typeof NEWS_KINDS;
 
+// The address of a sample story (src/data/newsroom.ts), made from its title.
+export const storySlug = (title: string) =>
+  title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+const withPages = (kind: NewsKind, stories: NewsroomStory[]): Story[] => stories.map((s) => ({ ...s, href: `/newsroom/${kind}/${storySlug(s.title)}` }));
+
 const BUNDLED: NewsroomData = {
-  pressReleases: latestPressReleases,
-  news: latestNews,
-  events: latestEvents,
+  pressReleases: withPages("press-releases", latestPressReleases),
+  news: withPages("news", latestNews),
+  events: withPages("events", latestEvents),
   notices: companyNotices,
   youtube: youtubeVideos,
   photos: galleryPhotos,
@@ -74,6 +80,7 @@ async function fromDatabase(): Promise<NewsroomData> {
       date: formatKathmandu(e.startsAt) + (e.venue ? `, ${e.venue}` : ""),
       title: e.title,
       summary: e.summary ?? "",
+      href: `/newsroom/events/${e.slug}`,
     })),
     notices: notices.map((n) => ({ company: n.company?.name ?? "Sanjeevani Group", date: formatKathmandu(n.noticeDate), title: n.title })),
     youtube: videos.filter((v) => v.placement === "NEWSROOM_YOUTUBE" && v.url).map((v) => ({ url: v.url!, title: v.title, thumbnail: v.thumbnail?.url })),
@@ -98,24 +105,74 @@ export async function loadNewsroom(): Promise<NewsroomData> {
   }
 }
 
-// One published article for /newsroom/<kind>/<slug>. Body blocks are returned
-// as data and rendered as plain text by the page (never as HTML).
-export async function loadArticle(kind: NewsKind, slug: string) {
-  if (!isDatabaseConfigured()) return null;
-  const article = await prisma.newsArticle.findFirst({
-    where: { slug, status: "PUBLISHED", type: { in: [...NEWS_KINDS[kind].types] }, OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }] },
-    include: { coverImage: image, company: { select: { name: true, slug: true, status: true } } },
-  });
-  if (!article) return null;
+// One story's page: /newsroom/<news | press-releases | events>/<slug>. It is a
+// published record, or one of the sample stories while that kind has nothing
+// published yet. Body blocks are returned as data and rendered as plain text
+// by the page (never as HTML).
+export type StoryPage = {
+  kind: NewsKind;
+  title: string;
+  excerpt: string | null;
+  date: string;
+  cover: { url: string; alt: string } | null;
+  blocks: unknown[];
+  company: { name: string; slug: string } | null;
+  tags: string[];
+  link: string | null;
+  venue: string | null;
+  when: string | null;
+  related: Story[];
+};
+
+export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPage | null> {
+  const newsroom = await loadNewsroom();
+  const list = kind === "events" ? newsroom.events : kind === "press-releases" ? newsroom.pressReleases : newsroom.news;
+  const related = (href: string) => list.filter((s) => s.href !== href).slice(0, 3);
+  const company = (c: { name: string; slug: string; status: string } | null) => (c?.status === "PUBLISHED" ? { name: c.name, slug: c.slug } : null);
+
+  if (isDatabaseConfigured()) {
+    try {
+      if (kind === "events") {
+        const e = await prisma.event.findFirst({ where: { slug, status: "PUBLISHED" }, include: { coverImage: image, company: { select: { name: true, slug: true, status: true } } } });
+        if (e) {
+          return {
+            kind, title: e.title, excerpt: e.summary, date: formatKathmandu(e.startsAt),
+            cover: e.coverImage ? { url: e.coverImage.url, alt: e.coverImage.altText ?? e.title } : null,
+            blocks: Array.isArray(e.body) ? (e.body as unknown[]) : [], // the summary is already shown as the lead
+            company: company(e.company), tags: [], link: e.linkUrl, venue: e.venue,
+            when: `${formatKathmandu(e.startsAt, true)}${e.endsAt ? ` to ${formatKathmandu(e.endsAt, true)}` : ""}`,
+            related: related(`/newsroom/events/${e.slug}`),
+          };
+        }
+      } else {
+        const a = await prisma.newsArticle.findFirst({
+          where: { slug, status: "PUBLISHED", type: { in: [...NEWS_KINDS[kind].types] }, OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }] },
+          include: { coverImage: image, company: { select: { name: true, slug: true, status: true } } },
+        });
+        if (a) {
+          return {
+            kind, title: a.title, excerpt: a.excerpt, date: formatKathmandu(a.publishedAt ?? a.createdAt),
+            cover: a.coverImage ? { url: a.coverImage.url, alt: a.coverImage.altText ?? a.title } : null,
+            blocks: Array.isArray(a.body) ? (a.body as unknown[]) : [],
+            company: company(a.company), tags: a.tags, link: a.linkUrl, venue: null, when: null,
+            related: related(`/newsroom/${kind}/${a.slug}`),
+          };
+        }
+      }
+    } catch (error) {
+      console.error("Could not load the story:", error instanceof Error ? error.message.split("\n")[0] : error);
+    }
+  }
+
+  // A sample story, while this kind still shows the bundled content.
+  const sample = list.find((s) => s.href === `/newsroom/${kind}/${slug}`);
+  if (!sample) return null;
   return {
-    title: article.title,
-    excerpt: article.excerpt,
-    date: formatKathmandu(article.publishedAt ?? article.createdAt),
-    cover: article.coverImage ? { url: article.coverImage.url, alt: article.coverImage.altText ?? article.title } : null,
-    blocks: Array.isArray(article.body) ? (article.body as unknown[]) : [],
-    company: article.company?.status === "PUBLISHED" ? { name: article.company.name, slug: article.company.slug } : null,
-    tags: article.tags,
+    kind, title: sample.title, excerpt: sample.summary || null, date: sample.date,
+    cover: { url: sample.image, alt: sample.alt }, blocks: [],
+    company: null, tags: [], link: sample.link ?? null, venue: null, when: kind === "events" ? sample.date : null,
+    related: related(sample.href ?? ""),
   };
 }
 
-export type ArticleData = NonNullable<Awaited<ReturnType<typeof loadArticle>>>;
+export type ArticleData = StoryPage;
