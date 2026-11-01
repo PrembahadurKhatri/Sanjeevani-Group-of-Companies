@@ -1,7 +1,7 @@
 // Which sections a company's profile page shows, in what order and under what
 // labels. Shared by the admin form and the public page (no I/O).
 
-export const SECTION_KEYS = ["overview", "about", "services", "leadership", "branches", "businesses", "projects", "news", "careers", "gallery", "contact"] as const;
+export const SECTION_KEYS = ["overview", "about", "services", "leadership", "branches", "businesses", "projects", "news", "gallery", "careers", "contact"] as const;
 export type SectionKey = (typeof SECTION_KEYS)[number];
 
 export type SectionSetting = { key: SectionKey; enabled: boolean; label?: string; showEmpty?: boolean };
@@ -19,8 +19,9 @@ export const SECTION_DEFAULTS: Record<SectionKey, { label: string; enabled: bool
   businesses: { label: "Our businesses", enabled: true, showEmpty: false },
   projects: { label: "Projects & achievements", enabled: true, showEmpty: false },
   news: { label: "News & updates", enabled: true, showEmpty: false },
-  careers: { label: "Careers", enabled: true, showEmpty: false },
   gallery: { label: "Gallery", enabled: true, showEmpty: false },
+  // Always shown, just above Get in touch, with a note when nothing is open.
+  careers: { label: "Vacancies available", enabled: true, showEmpty: true },
   contact: { label: "Get in touch", enabled: true, showEmpty: true },
 };
 
