@@ -453,3 +453,6 @@
   .nr-jump-kicker { text-align: center; }
   .newsroom .nr-jump a { min-height: 42px; padding: 0 16px; font-size: 14px; }
 }
+/* The patterned band sits directly under the hero, with no gap. */
+.newsroom:has(.nr-jump-band) { padding-top: 0; }
+.nr-jump-band { border-top: 0; }
