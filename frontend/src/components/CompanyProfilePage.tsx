@@ -524,7 +524,7 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
                 <li key={v.id}>
                   <Link href={v.href}>
                     <span className="cxp-job-title">{v.title}</span>
-                    <span className="cxp-job-meta"><span>{v.location}</span><span>{v.type}</span><span>Apply by <span className="num">{v.deadline}</span></span></span>
+                    <span className="cxp-job-meta"><span>{v.location}</span><span>{v.type}</span><span>{/^open/i.test(v.deadline) ? v.deadline : <>Apply by <span className="num">{v.deadline}</span></>}</span></span>
                     <Icon name="arrow" />
                   </Link>
                 </li>
