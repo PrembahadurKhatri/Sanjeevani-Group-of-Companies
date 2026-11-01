@@ -331,7 +331,7 @@ function CompanyLeaders({ me, companyId }: { me: Me; companyId: string }) {
     <div className="adm-company-leaders adm-field-wide">
       <div className="adm-form-section"><h4>Leadership on this page</h4><p className="adm-muted">The Chairman is shown on every company page. Add the Managing Director and other leaders under Leadership, choosing this company in their role.</p></div>
       {rows === null ? <p className="adm-muted">Loading…</p> : rows.length === 0 ? (
-        <p className="admin-message admin-error">No Managing Director yet. Until one is added, the page shows &ldquo;To be announced&rdquo;.</p>
+        <p className="admin-message admin-error">No Managing Director yet. Until one is added, the page shows &ldquo;To be announced&rdquo; with the Chairman&rsquo;s photo.</p>
       ) : (
         <ul className="adm-plain-cards">
           {rows.map((r) => (

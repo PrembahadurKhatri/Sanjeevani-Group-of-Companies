@@ -6,6 +6,7 @@ const newsroomLinks = [
   { label: "News", href: "/newsroom/news" },
   { label: "Events", href: "/newsroom/events" },
   { label: "Press Releases", href: "/newsroom/press-releases" },
+  { label: "Gallery", href: "/gallery" },
 ];
 
 // Same pattern as the About us menu: hover or keyboard focus opens the list

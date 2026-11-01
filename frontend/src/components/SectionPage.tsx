@@ -35,7 +35,6 @@ const navigation = [
   { label: "About us", href: "/about-us" },
   { label: "Business", href: "/businesses" },
   { label: "Newsroom", href: "/newsroom" },
-  { label: "Gallery", href: "/gallery" },
   { label: "Community", href: "/community" },
   { label: "Careers", href: "/careers" },
   { label: "Contact", href: "/contact" },
@@ -629,7 +628,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
             ) : item.label === "Business" ? (
               <BusinessNavMenu businesses={businesses} key={item.href} isCurrent={section === "businesses"} />
             ) : item.label === "Newsroom" ? (
-              <NewsroomNavMenu key={item.href} isCurrent={section === "newsroom"} />
+              <NewsroomNavMenu key={item.href} isCurrent={section === "newsroom" || section === "gallery"} />
             ) : item.label === "Careers" ? (
               <CareersNavMenu businesses={businesses} key={item.href} isCurrent={section === "careers"} />
             ) : (

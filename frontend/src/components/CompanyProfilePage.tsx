@@ -114,6 +114,7 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
   const has = (key: SectionKey) => data.sections.some((s) => s.key === key);
   const intro = c.fullDescription ? paragraphs(c.fullDescription) : [];
   const md = data.leaders.flatMap((g) => g.people).find((p) => p.managingDirector);
+  const mdPhoto = md?.photo?.url ?? data.chairman?.photo?.url ?? "/chairman.png";
   const primary = c.locations.find((l) => l.isPrimary) ?? c.locations[0];
   const otherLocations = c.locations.filter((l) => l !== primary);
   const facts: { label: string; value: string; href?: string; external?: boolean }[] = [
@@ -240,8 +241,8 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
             </article>
             <article className="cx-leader">
               <div className="cx-leader-photo">
-                {/* PLACEHOLDER: the chairman's portrait stands in until a Managing Director with a photo is added. */}
-                <Image src={md?.photo?.url ?? "/chairman.png"} alt={md?.name ?? "Managing director"} fill sizes="(max-width: 780px) 70vw, 300px" unoptimized={remote(md?.photo?.url ?? "")} />
+                {/* The Managing Director shows the Chairman's portrait until their own photo is added. */}
+                <Image src={mdPhoto} alt={md?.name ?? "Managing director"} fill sizes="(max-width: 780px) 70vw, 300px" unoptimized={remote(mdPhoto)} />
               </div>
               <div className="cx-leader-copy">
                 <h3>{md?.name ?? "To be announced"}</h3>
