@@ -459,3 +459,15 @@ body:has(.adm) .theme-switcher { display: none; }
 .adm-sections-editor input[type="text"], .adm-sections-editor td > input:not([type]) { min-width: 160px; }
 .adm-tab-note { padding: var(--space-md); border: var(--rule-hair) dashed var(--color-rule); border-radius: var(--radius-control); color: var(--color-muted); }
 .adm-preview-link { display: inline-flex; align-items: center; gap: 6px; }
+
+/* -------------------------------- Dashboard figures: green cards (light and dark) */
+.adm .adm-figure { border-color: transparent; background: radial-gradient(260px 160px at 100% 0%, rgb(196 229 138 / 0.24), transparent 65%), linear-gradient(150deg, #1d4416 0%, #2f5c1a 55%, #3a7020 100%); color: #fff; box-shadow: 0 22px 44px -32px rgb(21 52 18 / 0.75); }
+.adm .adm-figure::before { background: linear-gradient(90deg, #c4e58a, rgb(196 229 138 / 0.2)); }
+.adm .adm-figure:hover { border-color: transparent; box-shadow: 0 30px 56px -32px rgb(21 52 18 / 0.85); filter: brightness(1.06); }
+.adm .adm-figure:active { background: linear-gradient(150deg, #173a12 0%, #24521a 100%); }
+.adm .adm-figure-label { color: rgb(238 246 230 / 0.82); }
+.adm .adm-figure-icon { background: rgb(255 255 255 / 0.14); color: #c4e58a; }
+.adm .adm-figure-value { color: #fff; }
+.adm .adm-figure-note { color: rgb(238 246 230 / 0.72); }
+.adm .adm-figure:focus-visible { outline: 2px solid #c4e58a; outline-offset: 3px; }
+.adm .adm-figure .adm-skeleton { background: rgb(255 255 255 / 0.18); }
