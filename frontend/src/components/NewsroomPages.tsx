@@ -16,6 +16,9 @@ const remote = (src: string) => /^https?:\/\//.test(src);
 export const NEWSROOM_PAGE = 6;
 const PAGE = NEWSROOM_PAGE;
 
+// "Read full story" for press releases; "Read more" for news and events.
+const readLabel = (href: string) => (href.startsWith("/newsroom/press-releases/") ? "Read full story" : "Read more");
+
 export function NewsroomCards({ stories }: { stories: Story[] }) {
   return (
     <div className="newsroom-grid">
@@ -29,9 +32,9 @@ export function NewsroomCards({ stories }: { stories: Story[] }) {
             <h3>{story.href ? <Link className="newsroom-card-title-link" href={story.href}>{story.title}</Link> : story.title}</h3>
             <p>{story.summary}</p>
             {story.href ? (
-              <Link className="newsroom-card-link" href={story.href}>Read full story <span aria-hidden="true">→</span></Link>
+              <Link className="newsroom-card-link" href={story.href}>{readLabel(story.href)} <span aria-hidden="true">→</span></Link>
             ) : story.link ? (
-              <a className="newsroom-card-link" href={story.link} target="_blank" rel="noopener noreferrer">Read full story <span aria-hidden="true">↗</span></a>
+              <a className="newsroom-card-link" href={story.link} target="_blank" rel="noopener noreferrer">Read more <span aria-hidden="true">↗</span></a>
             ) : null}
           </div>
         </article>
@@ -214,7 +217,7 @@ export function NewsArticle({ article, kind, kindTitle }: { article: ArticleData
               </dl>
               {article.link && (
                 <a className="nr-story-cta" href={article.link} {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
-                  {kind === "events" ? "More information" : "Read the full story"} <span aria-hidden="true">{external ? "↗" : "→"}</span>
+                  {kind === "press-releases" ? "Read full story" : "Read more"} <span aria-hidden="true">{external ? "↗" : "→"}</span>
                 </a>
               )}
               <Link className="nr-story-back" href={`/newsroom/${kind}`}>← All {kindTitle.toLowerCase()}</Link>
