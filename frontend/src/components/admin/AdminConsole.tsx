@@ -7,7 +7,6 @@ import { AccountPanel, AuditPanel, SettingsPanel } from "@/components/admin/Syst
 import { ApplicationsPanel, VacanciesPanel } from "@/components/admin/RecruitmentPanels";
 import { ContactPanel, UsersPanel } from "@/components/admin/PeoplePanels";
 import TrafficChart from "@/components/admin/TrafficChart";
-import { SECTIONS, roleAbilities } from "@/components/admin/sections";
 import { SYSTEM_ROLES } from "@/server/auth/permissions";
 import { BusinessesPanel, LeadershipPanel, NewsroomPanel } from "@/components/admin/CmsPanels";
 import ApprovalsPanel from "@/components/admin/ApprovalsPanel";
@@ -219,62 +218,6 @@ function Brand({ role }: { role?: string }) {
 
 type Figure = { key: string; label: string; value: number | null; note: string; tab: TabKey };
 
-function greeting() {
-  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kathmandu", hour: "numeric", hour12: false }).format(new Date()));
-  return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-}
-
-// The top of each person's dashboard: who they are, what they look after,
-// and the sections their role opens. Nothing here is shown without access.
-function Welcome({ me, onOpen }: { me: Me; onOpen: (tab: TabKey) => void }) {
-  const [scope, setScope] = useState<string | null>(null);
-  const grants = Object.values(me.permissions);
-  const groupWide = grants.some((g) => g === "all");
-
-  useEffect(() => {
-    if (groupWide) { setScope("The whole Sanjeevani Group"); return; }
-    const ids = [...new Set(grants.flatMap((g) => (Array.isArray(g) ? g : [])))];
-    if (ids.length === 0) { setScope("No company assigned yet"); return; }
-    if (!hasPermission(me, "company.read")) { setScope(`${ids.length} ${ids.length === 1 ? "company" : "companies"}`); return; }
-    api<{ companies: { id: string; name: string }[] }>("/api/admin/companies")
-      .then((r) => setScope(r.companies.filter((c) => ids.includes(c.id)).map((c) => c.name).join(", ") || `${ids.length} companies`))
-      .catch(() => setScope(`${ids.length} ${ids.length === 1 ? "company" : "companies"}`));
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- recompute only when the signed-in person changes
-  }, [me]);
-
-  const sections = SECTIONS.filter((s) => hasPermission(me, s.permission));
-  const abilities = [...new Set(me.roles.flatMap((r) => roleAbilities(r)))];
-  return (
-    <section className="adm-welcome" aria-labelledby="adm-welcome-title">
-      <div className="adm-welcome-head">
-        <div>
-          <p className="adm-welcome-greeting">{greeting()},</p>
-          <h2 id="adm-welcome-title">{me.user.name}</h2>
-          <div className="adm-role-chips">
-            {me.roles.map((r) => <span key={r} className="adm-role-chip">{roleLabel(r)}</span>)}
-          </div>
-        </div>
-        <dl className="adm-welcome-facts">
-          <div><dt>You look after</dt><dd>{scope ?? "…"}</dd></div>
-          {abilities.length > 0 && <div><dt>You can</dt><dd>{abilities.join(", ")}</dd></div>}
-        </dl>
-      </div>
-      {sections.length > 0 && (
-        <ul className="adm-workspace" aria-label="Your workspace">
-          {sections.map((s) => (
-            <li key={s.key}>
-              <button type="button" onClick={() => onOpen(s.key as TabKey)}>
-                <span className="adm-workspace-icon" aria-hidden="true">{TABS.find((t) => t.key === s.key)?.icon}</span>
-                <span className="adm-workspace-text"><strong>{s.label}</strong><span>{s.text}</span></span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 function Dashboard({ me, onOpen, companyId = "" }: { me: Me; onOpen: (tab: TabKey) => void; companyId?: string }) {
   const scope = companyId ? `&companyId=${companyId}` : "";
   const [figures, setFigures] = useState<Figure[]>([]);
@@ -341,7 +284,6 @@ function Dashboard({ me, onOpen, companyId = "" }: { me: Me; onOpen: (tab: TabKe
   return (
     <>
       {/* Super Administrators see everything already; the banner is for scoped roles. */}
-      {!me.roles.includes("SUPER_ADMIN") && <Welcome me={me} onOpen={onOpen} />}
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
       {figures.length > 0 && (
         <ul className="adm-figures" aria-label="Work waiting">
