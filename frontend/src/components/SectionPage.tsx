@@ -22,7 +22,7 @@ import AboutNavMenu from "@/components/AboutNavMenu";
 import CareersNavMenu from "@/components/CareersNavMenu";
 import NewsroomNavMenu from "@/components/NewsroomNavMenu";
 import CompanyProfilePage from "@/components/CompanyProfilePage";
-import { CompanyOfferingPage, NewsArticle, NewsroomCards, NewsroomListing } from "@/components/NewsroomPages";
+import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomListing, PagedCards } from "@/components/NewsroomPages";
 import type { CompanyOfferingData, CompanyProfileData } from "@/server/public/company-profile";
 import type { ArticleData, NewsroomData } from "@/server/public/newsroom";
 import type { CommunityData } from "@/server/public/community";
@@ -835,7 +835,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
         ) : section === "gallery" ? (
           <section className="newsroom nr-gallery-page">
             <div className="reference-wrap">
-              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} heading="Photos and videos" pageSize={12} />
+              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} heading="Photos and videos" pageSize={NEWSROOM_PAGE} />
             </div>
           </section>
         ) : section === "newsroom" ? (
@@ -860,7 +860,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                     <h2 id={`${group.id}-title`}>{group.label}</h2>
                     <span>{group.stories.length} {group.stories.length === 1 ? "update" : "updates"}</span>
                   </div>
-                  <NewsroomCards stories={group.stories} />
+                  <PagedCards stories={group.stories} />
                 </section>
               ))}
 
@@ -916,7 +916,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                 )}
               </section>
 
-              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} />
+              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} pageSize={NEWSROOM_PAGE} />
 
               <p className="newsroom-contact">For media enquiries, email <a href="mailto:info@sanjeevanigroup.com">info@sanjeevanigroup.com</a>.</p>
             </div>

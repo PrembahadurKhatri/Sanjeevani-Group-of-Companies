@@ -13,7 +13,7 @@ const remote = (src: string) => /^https?:\/\//.test(src);
 // full-screen viewer, and a video grid. Used on the Newsroom and Gallery pages
 // (and, photos only, on company pages). `renderYouTube` is the Newsroom's own
 // click-to-play YouTube player, so every page behaves the same. `pageSize`
-// shows that many items first, with a Load more button for the rest.
+// shows that many items first, with a Show more button adding that many again.
 export default function NewsroomGallery({
   renderYouTube,
   photos: galleryPhotos = bundledPhotos,
@@ -111,7 +111,7 @@ export default function NewsroomGallery({
           </ul>
           {galleryPhotos.length > shownPhotos && (
             <button type="button" className="nr-load-more" onClick={() => setShownPhotos((n) => n + (pageSize ?? n))}>
-              Load more photos <span className="num">({galleryPhotos.length - shownPhotos} more)</span>
+              Show more photos <span className="num">({galleryPhotos.length - shownPhotos} more)</span>
             </button>
           )}
           </>
@@ -148,7 +148,7 @@ export default function NewsroomGallery({
           </ul>
           {galleryVideos.length > shownVideos && (
             <button type="button" className="nr-load-more" onClick={() => setShownVideos((n) => n + (pageSize ?? n))}>
-              Load more videos <span className="num">({galleryVideos.length - shownVideos} more)</span>
+              Show more videos <span className="num">({galleryVideos.length - shownVideos} more)</span>
             </button>
           )}
           </>

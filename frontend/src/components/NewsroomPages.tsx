@@ -12,7 +12,9 @@ import type { CompanyOfferingData } from "@/server/public/company-profile";
 // card and layout styles.
 
 const remote = (src: string) => /^https?:\/\//.test(src);
-const PAGE = 9;
+// Newsroom lists show 6 items, then 6 more each time Show more is pressed.
+export const NEWSROOM_PAGE = 6;
+const PAGE = NEWSROOM_PAGE;
 
 export function NewsroomCards({ stories }: { stories: Story[] }) {
   return (
@@ -35,6 +37,21 @@ export function NewsroomCards({ stories }: { stories: Story[] }) {
         </article>
       ))}
     </div>
+  );
+}
+
+// A group of story cards on the Newsroom page, 6 at a time.
+export function PagedCards({ stories }: { stories: Story[] }) {
+  const [shown, setShown] = useState(PAGE);
+  return (
+    <>
+      <NewsroomCards stories={stories.slice(0, shown)} />
+      {stories.length > shown && (
+        <button type="button" className="nr-load-more" onClick={() => setShown((n) => n + PAGE)}>
+          Show more <span className="num">({stories.length - shown} more)</span>
+        </button>
+      )}
+    </>
   );
 }
 
@@ -63,7 +80,7 @@ export function NewsroomListing({ kind, title, stories }: { kind: string; title:
               <NewsroomCards stories={stories.slice(0, shown)} />
               {stories.length > shown && (
                 <button type="button" className="nr-load-more" onClick={() => setShown((n) => n + PAGE)}>
-                  Load more <span className="num">({stories.length - shown} more)</span>
+                  Show more <span className="num">({stories.length - shown} more)</span>
                 </button>
               )}
             </>
