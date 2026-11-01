@@ -5,14 +5,14 @@
 
 /* ---------- preview bar and section navigation ---------- */
 .cx-preview-bar { position: sticky; z-index: 40; top: 0; margin: 0; padding: 10px 16px; background: #7a4b00; color: #fff8e6; font: 600 0.875rem/1.4 var(--font-body); text-align: center; }
-.cx-tabs { position: sticky; z-index: 20; top: var(--header-offset); border-bottom: 1px solid var(--bx-rule); background: color-mix(in oklab, var(--bx-paper) 92%, transparent); backdrop-filter: blur(10px); }
+.cx-tabs { position: relative; z-index: 2; border-bottom: 1px solid var(--bx-rule); background: color-mix(in oklab, var(--bx-paper) 92%, transparent); backdrop-filter: blur(10px); }
 .cx-tabs ul { margin: 0; padding: 0; display: flex; gap: var(--space-lg); overflow-x: auto; list-style: none; scrollbar-width: none; }
 .cx-tabs ul::-webkit-scrollbar { display: none; }
 .cx-tabs a { min-height: 52px; display: inline-flex; align-items: center; border-bottom: 2px solid transparent; color: var(--bx-muted); font: 600 var(--text-sm)/1 var(--bx-body); white-space: nowrap; text-decoration: none; transition: color var(--dur-short), border-color var(--dur-short); }
 .cx-tabs a:hover, .cx-tabs a:focus-visible { border-bottom-color: var(--bx-accent); color: var(--bx-ink-2); }
 
 /* Anchored sections stop below the sticky header and section bar. */
-.cx-block { scroll-margin-top: calc(var(--header-offset) + 56px); }
+.cx-block { scroll-margin-top: calc(var(--header-offset) + 8px); }
 .cx-block:not(.cx-overview):not(.cx-leaders):not(.cx-contact) { padding-block: var(--section-gap); }
 .cx-alt { background: var(--bx-paper-2); }
 .cx-section-head { margin-bottom: var(--space-xl); display: grid; gap: var(--space-md); }
