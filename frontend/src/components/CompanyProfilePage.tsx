@@ -62,6 +62,8 @@ const ICONS = {
   news: <><path d="M4 5h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5Z" /><path d="M17 9h3v10a2 2 0 0 1-2 2M8 9h5M8 13h5M8 17h3" /></>,
   award: <><circle cx="12" cy="9" r="6" /><path d="m8.5 14-1.5 7 5-2.5 5 2.5-1.5-7" /></>,
 } as const;
+// Icons cycled across the simple services list.
+const TILE_ICONS: (keyof typeof ICONS)[] = ["spark", "award", "target", "users", "briefcase", "globe"];
 function Icon({ name }: { name: keyof typeof ICONS }) {
   return <svg className="cxp-icon" viewBox="0 0 24 24" aria-hidden="true">{ICONS[name]}</svg>;
 }
@@ -345,7 +347,14 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
             </ul>
           ) : c.services.length > 0 ? (
             <ul className="cxp-tiles cxp-reveal">
-              {c.services.map((s, i) => <li key={s}><span className="num">{String(i + 1).padStart(2, "0")}</span><strong>{s}</strong></li>)}
+              {c.services.map((s, i) => (
+                <li key={s}>
+                  <span className="cxp-tile-icon"><Icon name={TILE_ICONS[i % TILE_ICONS.length]} /></span>
+                  <span className="cxp-tile-num num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
+                  <strong>{s}</strong>
+                  <span className="cxp-tile-line" aria-hidden="true" />
+                </li>
+              ))}
             </ul>
           ) : (
             <p className="cx-empty">Details of our {label("services").toLowerCase()} will be added soon.</p>

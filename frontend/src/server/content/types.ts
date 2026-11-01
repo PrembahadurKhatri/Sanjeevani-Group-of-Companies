@@ -11,7 +11,7 @@ type Row = Record<string, unknown> & { id: string };
 type Input = Record<string, unknown>;
 
 export type ContentType = {
-  model: "faq" | "newsArticle" | "event" | "notice" | "video" | "gallery" | "homepageSlide" | "keySector" | "impactPillar" | "staticPage" | "leader";
+  model: "faq" | "newsArticle" | "event" | "notice" | "video" | "gallery" | "homepageSlide" | "keySector" | "impactPillar" | "staticPage" | "leader" | "communityProgram" | "communityGalleryItem";
   label: string;
   update: PermissionKey;
   publish: PermissionKey;
@@ -122,6 +122,14 @@ const impact = strictBoth(
   ["tab", "title", "imageAlt", "paragraphs"],
 );
 
+const communityProgram = strictBoth(
+  { name: str(2, 160), tagline: optionalStr(200), description: str(10, 3000), logoId: uuidOrNull, photoId: uuidOrNull, websiteUrl: hrefSchema.nullable().optional(), sortOrder },
+  ["name", "description"],
+);
+
+// A photo (with its description for screen readers) or a short text note.
+const communityTile = strictBoth({ imageId: uuidOrNull, altText: optionalStr(250), text: optionalStr(600), sortOrder }, []);
+
 const page = strictBoth(
   { key: slugSchema, title: str(2, 200), intro: optionalStr(1000), body: blocksSchema.nullable(), seoTitle: optionalStr(70), seoDescription: optionalStr(160) },
   ["key", "title"],
@@ -212,6 +220,16 @@ export const CONTENT_TYPES = {
     model: "impactPillar", scope: "group", stamps: "none", label: "Impact pillar", update: "content.update", publish: "content.publish", ...impact,
     toData: (i) => pick(i, ["tab", "title", "imageId", "imageAlt", "paragraphs", "sortOrder"]),
     owners: groupOwner, include: { image }, orderBy: [{ sortOrder: "asc" }], mediaIds: (i) => ids(i.imageId),
+  },
+  "community-programs": {
+    model: "communityProgram", scope: "group", stamps: "none", label: "Community organisation", update: "content.update", publish: "content.publish", ...communityProgram,
+    toData: (i) => pick(i, ["name", "tagline", "description", "logoId", "photoId", "websiteUrl", "sortOrder"]),
+    owners: groupOwner, include: { logo: image, photo: image }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], mediaIds: (i) => ids(i.logoId, i.photoId),
+  },
+  "community-gallery": {
+    model: "communityGalleryItem", scope: "group", stamps: "none", label: "Community gallery tile", update: "content.update", publish: "content.publish", ...communityTile,
+    toData: (i) => pick(i, ["imageId", "altText", "text", "sortOrder"]),
+    owners: groupOwner, include: { image }, orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }], mediaIds: (i) => ids(i.imageId),
   },
   pages: {
     model: "staticPage", scope: "group", stamps: "approve", label: "Page", update: "content.update", publish: "content.publish", ...page,

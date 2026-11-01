@@ -492,21 +492,24 @@ model MediaAsset {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  sectorImages     Sector[]             @relation("SectorImage")
-  companyLogos     Company[]            @relation("CompanyLogo")
-  companyBanners   Company[]            @relation("CompanyBanner")
-  companyShares    Company[]            @relation("CompanyShareImage")
-  locationImages   Location[]           @relation("LocationImage")
-  offeringImages   CompanyOffering[]    @relation("CompanyOfferingImage")
-  achievementImgs  CompanyAchievement[] @relation("CompanyAchievementImage")
-  relationLogos    CompanyRelation[]    @relation("CompanyRelationLogo")
+  sectorImages     Sector[]               @relation("SectorImage")
+  companyLogos     Company[]              @relation("CompanyLogo")
+  companyBanners   Company[]              @relation("CompanyBanner")
+  companyShares    Company[]              @relation("CompanyShareImage")
+  communityLogos   CommunityProgram[]     @relation("CommunityProgramLogo")
+  communityPhotos  CommunityProgram[]     @relation("CommunityProgramPhoto")
+  communityGallery CommunityGalleryItem[] @relation("CommunityGalleryImage")
+  locationImages   Location[]             @relation("LocationImage")
+  offeringImages   CompanyOffering[]      @relation("CompanyOfferingImage")
+  achievementImgs  CompanyAchievement[]   @relation("CompanyAchievementImage")
+  relationLogos    CompanyRelation[]      @relation("CompanyRelationLogo")
   leaderPhotos     Leader[]
   careerAreaImages CareerArea[]
   newsCovers       NewsArticle[]
   eventCovers      Event[]
   galleryItems     GalleryItem[]
-  videoThumbnails  Video[]              @relation("VideoThumbnail")
-  videoFiles       Video[]              @relation("VideoFile")
+  videoThumbnails  Video[]                @relation("VideoThumbnail")
+  videoFiles       Video[]                @relation("VideoFile")
   homepageSlides   HomepageSlide[]
   keySectors       KeySector[]
   impactPillars    ImpactPillar[]
@@ -1113,4 +1116,42 @@ model SitePageDay {
 
   @@id([day, path])
   @@index([day])
+}
+
+// ---------------------------------------------------------------- community page
+
+// An organisation on the Community page: "Sanjeevani Group with <name>".
+model CommunityProgram {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  tagline     String?
+  description String
+  logoId      String?       @db.Uuid
+  logo        MediaAsset?   @relation("CommunityProgramLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  photoId     String?       @db.Uuid
+  photo       MediaAsset?   @relation("CommunityProgramPhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  websiteUrl  String?
+  sortOrder   Int           @default(0)
+  status      PublishStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, sortOrder])
+}
+
+// A tile in the Community page's photo mosaic: a photo, or a short text note.
+model CommunityGalleryItem {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  imageId     String?       @db.Uuid
+  image       MediaAsset?   @relation("CommunityGalleryImage", fields: [imageId], references: [id], onDelete: SetNull)
+  altText     String?
+  text        String?
+  sortOrder   Int           @default(0)
+  status      PublishStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, sortOrder])
 }

@@ -207,6 +207,51 @@ const GALLERY_VIDEOS: ContentConfig = {
   ],
 };
 
+// ----------------------------------------------------------------- community
+
+// The Community page: organisations shown as "Sanjeevani Group with <name>"
+// (logo, photo, story, website) and the photo mosaic below them.
+const COMMUNITY_PROGRAMS: ContentConfig = {
+  type: "community-programs", noun: "organisation", heading: "Organisations", update: "content.update", publish: "content.publish",
+  altFrom: "name",
+  title: (i) => String(i.name),
+  meta: (i) => String(i.tagline ?? (i.websiteUrl ? i.websiteUrl : "")),
+  fields: [
+    { k: "name", label: "Organisation name", type: "text", required: true, wide: true, help: "Shown as \u201cSanjeevani Group with <name>\u201d." },
+    { k: "tagline", label: "Tagline (optional)", type: "text" },
+    { k: "description", label: "What they do", type: "textarea", required: true },
+    { k: "logoId", label: "Logo", type: "image", rel: "logo", folder: "community" },
+    { k: "photoId", label: "Photo", type: "image", rel: "photo", folder: "community", help: "The large picture beside the text." },
+    { k: "websiteUrl", label: "Website (optional)", type: "url", help: "Know more opens this. Without one it opens the Contact page." },
+    { k: "sortOrder", label: "Order", type: "number" },
+  ],
+};
+
+const COMMUNITY_GALLERY: ContentConfig = {
+  type: "community-gallery", noun: "tile", heading: "Photo gallery", update: "content.update", publish: "content.publish",
+  altFrom: "altText",
+  title: (i) => (i.text ? `Text: ${String(i.text).slice(0, 60)}` : String(i.altText ?? "Photo")),
+  meta: (i) => (i.text ? "Text note" : "Photo"),
+  fields: [
+    { k: "imageId", label: "Photo", type: "image", rel: "image", folder: "community" },
+    { k: "altText", label: "Description for screen readers", type: "text", help: "What the photo shows." },
+    { k: "text", label: "Or a text note instead of a photo", type: "textarea", help: "Leave the photo empty to show this text as a tile." },
+    { k: "sortOrder", label: "Order", type: "number" },
+  ],
+};
+
+export function CommunityPanel({ me }: { me: Me }) {
+  const { lookups } = useLookups(me);
+  const [tab, setTab] = useState("programs");
+  return (
+    <>
+      <SubTabs tabs={[["programs", "Organisations"], ["gallery", "Photo gallery"]]} current={tab} onChange={setTab} />
+      <p className="adm-muted">Published items appear on the <a className="admin-link-button" href="/community" target="_blank" rel="noopener noreferrer">Community page</a>. Until anything is published there, the page keeps its current content.</p>
+      <ContentManager key={tab} me={me} config={tab === "programs" ? COMMUNITY_PROGRAMS : COMMUNITY_GALLERY} lookups={lookups} />
+    </>
+  );
+}
+
 export function NewsroomPanel({ me }: { me: Me }) {
   const { lookups } = useLookups(me);
   const [tab, setTab] = useState("news");

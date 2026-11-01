@@ -8,12 +8,13 @@ import { ApplicationsPanel, VacanciesPanel } from "@/components/admin/Recruitmen
 import { ContactPanel, UsersPanel } from "@/components/admin/PeoplePanels";
 import TrafficChart from "@/components/admin/TrafficChart";
 import { SYSTEM_ROLES } from "@/server/auth/permissions";
-import { BusinessesPanel, LeadershipPanel, NewsroomPanel } from "@/components/admin/CmsPanels";
+import { BusinessesPanel, CommunityPanel, LeadershipPanel, NewsroomPanel } from "@/components/admin/CmsPanels";
 import ApprovalsPanel from "@/components/admin/ApprovalsPanel";
 
-type TabKey = "dashboard" | "applications" | "vacancies" | "businesses" | "leadership" | "newsroom" | "approvals" | "contact" | "users" | "audit" | "settings" | "account";
+type TabKey = "dashboard" | "applications" | "vacancies" | "businesses" | "leadership" | "newsroom" | "community" | "approvals" | "contact" | "users" | "audit" | "settings" | "account";
 type Group = "Overview" | "Organization" | "Website" | "Recruitment" | "Communications" | "Administration";
-type Tab = { key: TabKey; label: string; title: string; context: string; permission?: string; anyOf?: string[]; group: Group; scoped?: boolean; icon: ReactNode };
+// groupWide: only for people whose permission covers the whole group, not one company.
+type Tab = { key: TabKey; label: string; title: string; context: string; permission?: string; anyOf?: string[]; groupWide?: boolean; group: Group; scoped?: boolean; icon: ReactNode };
 const GROUPS: Group[] = ["Overview", "Organization", "Website", "Recruitment", "Communications", "Administration"];
 
 // Line icons, drawn on a 24px grid with the current text colour.
@@ -30,6 +31,7 @@ const TABS: Tab[] = [
   { key: "businesses", label: "Companies", title: "Companies", context: "Categories and every company's page", permission: "company.read", group: "Organization", icon: icon("M4 20V8l6-4v16M10 20V10h10v10M4 20h16M13 13h1M17 13h1M13 16h1M17 16h1") },
   { key: "leadership", label: "Leadership", title: "Leadership", context: "Chairman, board, managing directors and team", permission: "leader.update", group: "Organization", icon: icon("M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 15.6 7.1 18.2 8 12.7 4 8.8 9.5 8z") },
   { key: "newsroom", label: "Newsroom", title: "Newsroom", context: "Press releases, events, notices, videos and gallery", permission: "content.update", group: "Website", icon: icon("M5 5h12v14H6a1 1 0 0 1-1-1zM17 9h2v9a1 1 0 0 1-2 0M8 9h6M8 12h6M8 15h4") },
+  { key: "community", label: "Community", title: "Community page", context: "Organisations and photos on the Community page", permission: "content.update", groupWide: true, group: "Website", icon: icon("M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z") },
   { key: "contact", label: "Enquiries", title: "Enquiries", context: "Messages from the contact page", permission: "contact.read", group: "Communications", scoped: true, icon: icon("M4 6h16v12H4zM4 7l8 6 8-6") },
   { key: "approvals", label: "Approvals", title: "Publishing approvals", context: "Content waiting for a publisher", anyOf: ["content.publish", "leader.publish"], group: "Administration", icon: icon("M9 12l2 2 4-4M12 3l7 3v6c0 4-3 7.5-7 9-4-1.5-7-5-7-9V6z") },
   { key: "users", label: "Users and roles", title: "Users and roles", context: "Each person signs in with their own account", permission: "user.manage", group: "Administration", icon: icon("M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20a6 6 0 0 1 12 0M16 4.5a3.5 3.5 0 0 1 0 6.5M18 14.5a6 6 0 0 1 3 5.5") },
@@ -38,7 +40,9 @@ const TABS: Tab[] = [
   { key: "account", label: "My account", title: "My account", context: "", group: "Administration", icon: icon("M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0") },
 ];
 
-const allowed = (me: Me, t: Tab) => (t.anyOf ? t.anyOf.some((p) => hasPermission(me, p)) : !t.permission || hasPermission(me, t.permission));
+const allowed = (me: Me, t: Tab) =>
+  t.anyOf ? t.anyOf.some((p) => hasPermission(me, p))
+    : !t.permission || (t.groupWide ? me.permissions[t.permission] === "all" : hasPermission(me, t.permission));
 
 const roleLabel = (role: string) => SYSTEM_ROLES[role]?.name ?? role.charAt(0) + role.slice(1).toLowerCase().replace(/_/g, " ");
 const roleName = (roles: string[]) => roles.map(roleLabel).join(", ") || "No role yet";
@@ -171,6 +175,7 @@ export default function AdminConsole() {
           {current.key === "businesses" && <BusinessesPanel me={me} />}
           {current.key === "leadership" && <LeadershipPanel me={me} />}
           {current.key === "newsroom" && <NewsroomPanel me={me} />}
+          {current.key === "community" && <CommunityPanel me={me} />}
           {current.key === "contact" && <ContactPanel key={company} me={me} companyId={company} />}
           {current.key === "users" && <UsersPanel me={me} />}
           {current.key === "audit" && <AuditPanel />}

@@ -25,6 +25,7 @@ import CompanyProfilePage from "@/components/CompanyProfilePage";
 import { CompanyOfferingPage, NewsArticle, NewsroomCards, NewsroomListing } from "@/components/NewsroomPages";
 import type { CompanyOfferingData, CompanyProfileData } from "@/server/public/company-profile";
 import type { ArticleData, NewsroomData } from "@/server/public/newsroom";
+import type { CommunityData } from "@/server/public/community";
 import { companyNotices, galleryPhotos, galleryVideos, getYouTubeId, latestEvents, latestPressReleases, youtubeVideos } from "@/data/newsroom";
 import SocialLinks from "@/components/SocialLinks";
 import NepalNetworkMap from "@/components/NepalNetworkMap";
@@ -445,9 +446,13 @@ type SectionPageProps = {
   section: string; companySlug?: string; leaderSlug?: string; careerAreaSlug?: string; vacancyId?: string; siteVacancies?: Vacancy[];
   companyProfile?: CompanyProfileData | null; offering?: CompanyOfferingData;
   newsroom?: NewsroomData; newsKind?: { key: string; title: string }; article?: ArticleData;
+  community?: CommunityData;
 };
 
-export default function SectionPage({ section, companySlug, leaderSlug, careerAreaSlug, vacancyId, siteVacancies, companyProfile, offering, newsroom, newsKind, article }: SectionPageProps) {
+export default function SectionPage({ section, companySlug, leaderSlug, careerAreaSlug, vacancyId, siteVacancies, companyProfile, offering, newsroom, newsKind, article, community }: SectionPageProps) {
+  // Community: published admin content, or the page's current content until then.
+  const foundations = community?.programs ?? communityFoundations;
+  const communityTiles = community?.gallery ?? communityGallery;
   const page = pageContent[section === "our-story" ? "about-us" : section];
   const nr = newsroom ?? BUNDLED_NEWSROOM;
   const storyLayout = section === "our-story" || section === "about-us";
@@ -920,12 +925,12 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
           <>
           <section className="community-foundations">
             <div className="reference-wrap">
-              {communityFoundations.map((foundation, index) => (
+              {foundations.map((foundation, index) => (
                 <article className={`community-foundation${index % 2 === 1 ? " is-reversed" : ""}`} key={`${foundation.name}-${index}`}>
                   <div className="community-foundation-copy">
                     <div className="community-foundation-logo">
                       {foundation.logo ? (
-                        <Image src={foundation.logo} alt={`${foundation.name} logo`} fill sizes="200px" />
+                        <Image src={foundation.logo} alt={`${foundation.name} logo`} fill sizes="200px" unoptimized={/^https?:/.test(foundation.logo)} />
                       ) : (
                         <GroupEmblem />
                       )}
@@ -945,7 +950,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                     )}
                   </div>
                   <div className="community-foundation-photo">
-                    <Image src={foundation.photo} alt={`${foundation.name} community work`} fill sizes="(max-width: 900px) 100vw, 45vw" />
+                    <Image src={foundation.photo} alt={`${foundation.name} community work`} fill sizes="(max-width: 900px) 100vw, 45vw" unoptimized={/^https?:/.test(foundation.photo)} />
                   </div>
                 </article>
               ))}
@@ -953,13 +958,13 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
           </section>
           <section className="community-gallery">
             <div className="reference-wrap community-gallery-grid">
-              {communityGallery.map((item, index) => item.type === "text" ? (
+              {communityTiles.map((item, index) => item.type === "text" ? (
                 <div className="community-gallery-note" key={`note-${index}`}>
                   <p>{item.text}</p>
                 </div>
               ) : (
                 <figure className="community-gallery-photo" key={item.src}>
-                  <Image src={item.src} alt={item.alt} fill sizes="(max-width: 600px) 100vw, (max-width: 1050px) 50vw, 33vw" />
+                  <Image src={item.src} alt={item.alt} fill sizes="(max-width: 600px) 100vw, (max-width: 1050px) 50vw, 33vw" unoptimized={/^https?:/.test(item.src)} />
                 </figure>
               ))}
             </div>
