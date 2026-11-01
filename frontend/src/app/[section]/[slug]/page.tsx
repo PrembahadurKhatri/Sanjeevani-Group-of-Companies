@@ -15,14 +15,18 @@ const NEWSROOM_PAGES: Record<string, string> = { news: NEWS_KINDS.news.title, ev
 // or it could not be reached). "missing": the company exists but is not public.
 async function companyPage(slug: string) {
   if (!isDatabaseConfigured()) return null;
-  try {
-    const profile = await loadCompanyProfile(slug);
-    if (profile) return profile;
-    return (await companyExists(slug)) ? "missing" : null;
-  } catch (error) {
-    console.error("Could not load the company page:", error instanceof Error ? error.message.split("\n")[0] : error);
-    return null;
+  // Two tries: the database host drops idle connections now and then, and a
+  // fresh attempt usually succeeds.
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const profile = await loadCompanyProfile(slug);
+      if (profile) return profile;
+      return (await companyExists(slug)) ? "missing" : null;
+    } catch (error) {
+      console.error(`Could not load the company page (try ${attempt}):`, error instanceof Error ? error.message.split("\n")[0] : error);
+    }
   }
+  return null;
 }
 
 // Sub-pages under two sections:

@@ -347,11 +347,11 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
             </ul>
           ) : c.services.length > 0 ? (
             <ul className="cxp-tiles cxp-reveal">
-              {c.services.map((s, i) => (
+              {c.services.map((s) => (
                 <li key={s}>
-                  <span className="cxp-tile-icon"><Icon name={TILE_ICONS[i % TILE_ICONS.length]} /></span>
                   <strong>{s}</strong>
                   <span className="cxp-tile-line" aria-hidden="true" />
+                  <span className="cxp-tile-mark" aria-hidden="true"><GroupEmblem /></span>
                 </li>
               ))}
             </ul>
