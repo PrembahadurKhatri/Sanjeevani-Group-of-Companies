@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
+import { LoadingBlock, LoadingInline } from "@/components/admin/Loading";
 import { allowedNextStatuses, type ApplicationStatus } from "@/server/recruitment/rules";
 
 const APPLICATION_STATUSES: ApplicationStatus[] = ["SUBMITTED", "UNDER_REVIEW", "SHORTLISTED", "INTERVIEW", "OFFERED", "REJECTED", "WITHDRAWN"];
@@ -41,7 +42,7 @@ export function ApplicationsPanel({ me, companyId = "" }: { me: Me; companyId?: 
   return (
     <>
       <div className="admin-list-heading">
-        <div><h2>Job applications</h2><p>{loading ? "Loading…" : `${data.total} matching`}</p></div>
+        <div><h2>Job applications</h2><p>{loading ? <LoadingInline /> : `${data.total} matching`}</p></div>
         {hasPermission(me, "application.export") && <a className="admin-secondary-button" href={`/api/admin/job-applications/export?${query}`}>Export CSV</a>}
       </div>
       <div className="admin-toolbar">
@@ -52,7 +53,7 @@ export function ApplicationsPanel({ me, companyId = "" }: { me: Me; companyId?: 
         </select>
       </div>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
-      {data.items.length === 0 ? <p className="admin-empty">{loading ? "Loading…" : "No applications match."}</p> : (
+      {data.items.length === 0 ? (loading ? <LoadingBlock label="Loading applications" /> : <p className="admin-empty">No applications match.</p>) : (
         <table className="admin-table">
           <thead><tr><th>Reference</th><th>Applicant</th><th>Position</th><th>Status</th><th>Received</th></tr></thead>
           <tbody>
@@ -98,7 +99,7 @@ function ApplicationDrawer({ id, me, onClose, onChanged }: { id: string; me: Me;
   return (
     <aside className="admin-drawer" aria-label="Application details">
       <div className="admin-drawer-head">
-        <h3>{app ? app.fullName : "Loading…"}</h3>
+        <h3>{app ? app.fullName : <LoadingInline label="Loading application" />}</h3>
         <button className="admin-close-button" type="button" onClick={onClose} aria-label="Close">×</button>
       </div>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
@@ -266,7 +267,7 @@ export function VacanciesPanel({ me, companyId = "" }: { me: Me; companyId?: str
   return (
     <>
       <div className="admin-list-heading">
-        <div><h2>Vacancies</h2><p>{loading ? "Loading…" : `${rows.length} vacancies`}</p></div>
+        <div><h2>Vacancies</h2><p>{loading ? <LoadingInline /> : `${rows.length} vacancies`}</p></div>
         {hasPermission(me, "vacancy.update") && <button className="admin-primary-button" type="button" onClick={() => setEditing({ id: null, form: { ...EMPTY_VACANCY, companyId: companies[0]?.id ?? "", careerAreaId: areas[0]?.id ?? "" } })}>New vacancy <span aria-hidden="true">＋</span></button>}
       </div>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
@@ -302,7 +303,7 @@ export function VacanciesPanel({ me, companyId = "" }: { me: Me; companyId?: str
           </div>
         </form>
       )}
-      {rows.length === 0 ? <p className="admin-empty">{loading ? "Loading…" : "No vacancies yet."}</p> : (
+      {rows.length === 0 ? (loading ? <LoadingBlock label="Loading vacancies" /> : <p className="admin-empty">No vacancies yet.</p>) : (
         <table className="admin-table">
           <thead><tr><th>Position</th><th>Status</th><th>Deadline</th><th>Applications</th><th>Actions</th></tr></thead>
           <tbody>

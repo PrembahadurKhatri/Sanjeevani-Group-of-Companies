@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
+import { LoadingBlock } from "@/components/admin/Loading";
 import { Pager } from "@/components/admin/RecruitmentPanels";
 import { roleAbilities, roleDescription, roleSections } from "@/components/admin/sections";
 
@@ -282,7 +283,7 @@ export function UsersPanel({ me }: { me: Me }) {
           <div className="admin-form-actions"><button className="admin-primary-button" type="submit">Send invitation</button></div>
         </form>
       )}
-      {loading && users.length === 0 && <p className="admin-empty">Loading…</p>}
+      {loading && users.length === 0 && <LoadingBlock label="Loading users" />}
       <table className="admin-table">
         <thead><tr><th>User</th><th>Roles</th><th>Can open</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead>
         <tbody>

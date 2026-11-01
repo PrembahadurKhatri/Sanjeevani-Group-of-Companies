@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { api, formatDate, type Me } from "@/components/admin/api";
+import { LoadingInline } from "@/components/admin/Loading";
 import { Pager } from "@/components/admin/RecruitmentPanels";
 
 // --------------------------------------------------------------------- audit
@@ -23,7 +24,7 @@ export function AuditPanel() {
   return (
     <>
       <div className="admin-list-heading">
-        <div><h2>Audit log</h2><p>{loading ? "Loading…" : `${data.total} entries`}</p></div>
+        <div><h2>Audit log</h2><p>{loading ? <LoadingInline /> : `${data.total} entries`}</p></div>
         <a className="admin-secondary-button" href={`/api/admin/audit/export?${query}`}>Export CSV</a>
       </div>
       <div className="admin-toolbar">

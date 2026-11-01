@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
+import { LoadingInline } from "@/components/admin/Loading";
 import ContentManager, { type ContentConfig } from "@/components/admin/ContentManager";
 import { type Field, FieldInputs, fromItem, type Lookups, toInput } from "@/components/admin/FieldForm";
 import {
@@ -455,7 +456,7 @@ export function BusinessesPanel({ me }: { me: Me }) {
   return (
     <>
       <div className="admin-list-heading">
-        <div><h2>Businesses</h2><p aria-busy={loading}>{loading ? "Loading…" : `${sectors.length} categories, ${companies.length} companies`}</p></div>
+        <div><h2>Businesses</h2><p aria-busy={loading}>{loading ? <LoadingInline /> : `${sectors.length} categories, ${companies.length} companies`}</p></div>
         {canCreate && !sectorForm && !editing && <button type="button" className="admin-primary-button" onClick={() => setSectorForm({ id: null, name: "", detail: "" })}>Add category <span aria-hidden="true">＋</span></button>}
       </div>
       {loadError && <p className="admin-message admin-error" role="alert">{loadError} <button type="button" className="admin-link-button" onClick={() => void reload()}>Try again</button></p>}

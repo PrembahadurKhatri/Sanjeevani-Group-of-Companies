@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, type Me } from "@/components/admin/api";
+import { LoadingBlock, LoadingInline } from "@/components/admin/Loading";
 
 // Everything waiting for a publisher, across content types, in one queue.
 // The workflow API checks the publish permission again for every action.
@@ -55,12 +56,12 @@ export default function ApprovalsPanel({ me }: { me: Me }) {
   return (
     <>
       <div className="admin-list-heading">
-        <div><h2>Publishing approvals</h2><p>{loading ? "Loading…" : `${rows.length} waiting for review, oldest first`}</p></div>
+        <div><h2>Publishing approvals</h2><p>{loading ? <LoadingInline /> : `${rows.length} waiting for review, oldest first`}</p></div>
       </div>
       {error && <p className="admin-message admin-error" role="alert">{error} <button type="button" className="admin-link-button" onClick={() => void load()}>Try again</button></p>}
       {notice && <p className="admin-message admin-notice" role="status">{notice}</p>}
       {rows.length === 0 ? (
-        <p className="admin-empty">{loading ? "Loading…" : "Nothing is waiting for review. Items sent for review by editors appear here."}</p>
+        loading ? <LoadingBlock label="Loading items waiting for review" /> : <p className="admin-empty">Nothing is waiting for review. Items sent for review by editors appear here.</p>
       ) : (
         <table className="admin-table">
           <thead><tr><th>Item</th><th>Kind</th><th>Sent for review</th><th>Actions</th></tr></thead>

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import GroupEmblem from "@/components/GroupEmblem";
 import { api, ApiError, hasPermission, type Me } from "@/components/admin/api";
+import { LoadingScreen } from "@/components/admin/Loading";
 import { AccountPanel, AuditPanel, SettingsPanel } from "@/components/admin/SystemPanels";
 import { ApplicationsPanel, VacanciesPanel } from "@/components/admin/RecruitmentPanels";
 import { ContactPanel, UsersPanel } from "@/components/admin/PeoplePanels";
@@ -96,7 +97,7 @@ export default function AdminConsole() {
     setMe(null);
   }
 
-  if (me === undefined) return <main className="adm adm-center" aria-busy="true"><p className="adm-muted">Loading the admin…</p></main>;
+  if (me === undefined) return <LoadingScreen />;
   if (me === null) return <ToLogin />;
 
   const tabs = TABS.filter((t) => allowed(me, t));
@@ -335,7 +336,7 @@ function ToLogin() {
     const here = window.location.pathname + window.location.search;
     window.location.replace(here === "/admin" ? LOGIN : `${LOGIN}?next=${encodeURIComponent(here)}`);
   }, []);
-  return <main className="adm adm-center" aria-busy="true"><p className="adm-muted">Opening the sign-in page…</p></main>;
+  return <LoadingScreen label="Opening the sign-in page" />;
 }
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -388,7 +389,7 @@ export function AdminLogin() {
     setBusy(false);
   }
 
-  if (checking) return <main className="adm adm-center" aria-busy="true"><p className="adm-muted">Loading…</p></main>;
+  if (checking) return <LoadingScreen label="Checking your session" />;
 
   return (
     <main className="adm adm-center">

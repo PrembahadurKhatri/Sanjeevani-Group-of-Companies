@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, type ReactNode, useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
+import { LoadingBlock, LoadingInline } from "@/components/admin/Loading";
 import { type Field, FieldInputs, fromItem, type Lookups, toInput } from "@/components/admin/FieldForm";
 
 // One list-and-edit screen for any content type the API's content registry
@@ -91,7 +92,7 @@ export default function ContentManager({ me, config, lookups }: { me: Me; config
   return (
     <>
       <div className="admin-list-heading">
-        <div>{config.heading ? <h3 className="adm-manager-title">{config.heading}</h3> : <h2>{config.noun}</h2>}<p>{loading ? "Loading…" : `${shown.length} in total`}</p></div>
+        <div>{config.heading ? <h3 className="adm-manager-title">{config.heading}</h3> : <h2>{config.noun}</h2>}<p>{loading ? <LoadingInline /> : `${shown.length} in total`}</p></div>
         {canEdit && !editing && <button className="admin-primary-button" type="button" onClick={startNew}>Add {config.noun} <span aria-hidden="true">＋</span></button>}
       </div>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
@@ -117,7 +118,7 @@ export default function ContentManager({ me, config, lookups }: { me: Me; config
       )}
 
       {shown.length === 0 ? (
-        <p className="admin-empty">{loading ? "Loading…" : `No ${config.noun} yet.`}</p>
+        loading ? <LoadingBlock label={`Loading ${config.heading?.toLowerCase() ?? config.noun}`} /> : <p className="admin-empty">{`No ${config.noun} yet.`}</p>
       ) : (
         <table className="admin-table">
           <thead><tr><th>Title</th><th>Status</th><th>Last change</th><th>Actions</th></tr></thead>

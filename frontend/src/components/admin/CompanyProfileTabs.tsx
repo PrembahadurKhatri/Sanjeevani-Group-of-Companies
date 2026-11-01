@@ -1,6 +1,7 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
+import { LoadingBlock, LoadingInline } from "@/components/admin/Loading";
 import { type Field, FieldInputs, fromItem, type Lookups, toInput } from "@/components/admin/FieldForm";
 import { CORE_SECTIONS, SECTION_DEFAULTS, resolveSections, type ResolvedSection } from "@/lib/company-sections";
 
@@ -92,7 +93,7 @@ export function ItemsManager({ me, companyId, kind, fields, noun, lookups, filte
   return (
     <div className="adm-company-items">
       <div className="admin-list-heading">
-        <div>{intro && <p className="adm-muted">{intro}</p>}<p>{shown === null ? "Loading…" : `${shown.length} in total`}</p></div>
+        <div>{intro && <p className="adm-muted">{intro}</p>}<p>{shown === null ? <LoadingInline /> : `${shown.length} in total`}</p></div>
         {rights.write && !editing && <button type="button" className="admin-primary-button" onClick={() => setEditing({ id: null, values: fromItem(fields, defaults ?? null) })}>Add {noun} <span aria-hidden="true">＋</span></button>}
       </div>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
@@ -174,7 +175,7 @@ export function CompanyNews({ me, companyId }: { me: Me; companyId: string }) {
       <p className="adm-muted">Articles are written and published in <a className="admin-link-button" href="/admin?tab=newsroom">Newsroom</a>. Link existing ones here; published ones appear in this company&rsquo;s News &amp; updates.</p>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
       {notice && <p className="admin-message admin-notice" role="status">{notice}</p>}
-      {rows === null ? <p className="adm-muted">Loading…</p> : (
+      {rows === null ? <LoadingBlock label="Loading articles" rows={3} /> : (
         <>
           {linked.length === 0 ? <p className="admin-empty">No articles linked to this company yet.</p> : (
             <table className="admin-table">
@@ -222,7 +223,7 @@ export function CompanyCareers({ me, companyId }: { me: Me; companyId: string })
     <div className="adm-company-items">
       <p className="adm-muted">Published vacancies appear automatically in this company&rsquo;s Careers section. <a className="admin-link-button" href="/admin?tab=vacancies">Manage vacancies</a></p>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
-      {rows === null ? <p className="adm-muted">Loading…</p> : rows.length === 0 ? <p className="admin-empty">No vacancies for this company yet.</p> : (
+      {rows === null ? <LoadingBlock label="Loading vacancies" rows={3} /> : rows.length === 0 ? <p className="admin-empty">No vacancies for this company yet.</p> : (
         <table className="admin-table">
           <thead><tr><th>Position</th><th>Status</th><th>Deadline</th><th>Applications</th></tr></thead>
           <tbody>
