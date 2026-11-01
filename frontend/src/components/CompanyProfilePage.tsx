@@ -335,7 +335,7 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
               {data.offerings.map((o, i) => (
                 <li key={o.slug} className="cxp-offering">
                   <div className="cxp-offering-media">
-                    {o.image ? <Photo image={o.image} sizes="(max-width: 640px) 92vw, 380px" /> : <span className="cxp-offering-num num">{String(i + 1).padStart(2, "0")}</span>}
+                    {o.image ? <Photo image={o.image} sizes="(max-width: 640px) 92vw, 380px" /> : <span className="cxp-offering-num"><Icon name={TILE_ICONS[i % TILE_ICONS.length]} /></span>}
                   </div>
                   <div className="cxp-offering-body">
                     <h3>{o.title}</h3>
@@ -350,7 +350,6 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
               {c.services.map((s, i) => (
                 <li key={s}>
                   <span className="cxp-tile-icon"><Icon name={TILE_ICONS[i % TILE_ICONS.length]} /></span>
-                  <span className="cxp-tile-num num" aria-hidden="true">{String(i + 1).padStart(2, "0")}</span>
                   <strong>{s}</strong>
                   <span className="cxp-tile-line" aria-hidden="true" />
                 </li>
