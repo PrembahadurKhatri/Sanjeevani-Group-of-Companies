@@ -134,6 +134,7 @@ export type StoryPage = {
   venue: string | null;
   when: string | null;
   related: Story[];
+  relatedNotices?: CompanyNotice[];
   photos: GalleryPhoto[];
   videos: GalleryVideo[];
 };
@@ -154,6 +155,7 @@ export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPa
   const newsroom = await loadNewsroom();
   const list = kind === "events" ? newsroom.events : kind === "press-releases" ? newsroom.pressReleases : kind === "notices" ? newsroom.noticeStories : newsroom.news;
   const related = (href: string) => list.filter((s) => s.href !== href).slice(0, 3);
+  const relatedNotices = (href: string) => (kind === "notices" ? { relatedNotices: newsroom.notices.filter((n) => n.href !== href).slice(0, 3) } : {});
   const company = (c: { name: string; slug: string; status: string } | null) => (c?.status === "PUBLISHED" ? { name: c.name, slug: c.slug } : null);
 
   if (isDatabaseConfigured()) {
@@ -168,7 +170,7 @@ export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPa
             cover: n.attachment ? { url: n.attachment.url, alt: n.attachment.altText ?? n.title } : null,
             blocks: (n.body ?? "").split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean).map((text) => ({ type: "paragraph", text })),
             company: company(n.company), tags: [], link: null, venue: null, when: null,
-            related: related(`/newsroom/notices/${n.id}`), ...storyGallery(n.media, n.title),
+            related: related(`/newsroom/notices/${n.id}`), ...relatedNotices(`/newsroom/notices/${n.id}`), ...storyGallery(n.media, n.title),
           };
         }
       } else if (kind === "events") {
@@ -210,7 +212,7 @@ export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPa
     kind, title: sample.title, excerpt: kind === "notices" ? `Notice from ${sample.summary}.` : sample.summary || null, date: sample.date,
     cover: kind === "notices" ? null : { url: sample.image, alt: sample.alt }, blocks: [],
     company: null, tags: [], link: sample.link ?? null, venue: null, when: kind === "events" ? sample.date : null,
-    related: related(sample.href ?? ""), photos: [], videos: [],
+    related: related(sample.href ?? ""), ...relatedNotices(sample.href ?? ""), photos: [], videos: [],
   };
 }
 

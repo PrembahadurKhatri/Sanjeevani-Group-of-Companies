@@ -21,8 +21,9 @@ import BusinessNavMenu from "@/components/BusinessNavMenu";
 import AboutNavMenu from "@/components/AboutNavMenu";
 import CareersNavMenu from "@/components/CareersNavMenu";
 import NewsroomNavMenu from "@/components/NewsroomNavMenu";
+import ScrollReveal from "@/components/ScrollReveal";
 import CompanyProfilePage from "@/components/CompanyProfilePage";
-import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomJump, NewsroomListing, PagedCards } from "@/components/NewsroomPages";
+import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomJump, NewsroomListing, NoticeCards, PagedCards } from "@/components/NewsroomPages";
 import type { CompanyOfferingData, CompanyProfileData } from "@/server/public/company-profile";
 import type { ArticleData, NewsroomData } from "@/server/public/newsroom";
 import type { CommunityData } from "@/server/public/community";
@@ -455,6 +456,8 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
   const communityTiles = community?.gallery ?? communityGallery;
   const page = pageContent[section === "our-story" ? "about-us" : section];
   const nr = newsroom ?? BUNDLED_NEWSROOM;
+  // Pages with the scroll and hero entrance animations.
+  const animated = ["newsroom", "gallery", "community", "careers"].includes(section);
   const storyLayout = section === "our-story" || section === "about-us";
   const leadershipLayout = section === "leadership" || section === "chairman";
   const photoHero = (section === "mission-vision-values" || section === "community" || section === "newsroom" || section === "gallery" || leadershipLayout || storyLayout) && !leaderSlug;
@@ -651,7 +654,8 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
 
       <GmailContactButton />
 
-      <main className={`section-page${section === "businesses" ? " businesses-page" : ""}${photoHero ? " mission-page" : ""}${companySlug ? " company-page bx-scope cx" : ""}${leaderSlug ? " leader-page bx-scope ld" : ""}${careerAreaSlug ? " vacancy-page bx-scope vc" : ""}${!companySlug && (section === "privacy-policy" || section === "terms-of-use" || section === "faq") ? " legal-page bx-scope lg" : ""}`}>
+      {animated && <ScrollReveal scope={`${section}/${newsKind?.key ?? ""}/${article?.title ?? ""}/${careerAreaSlug ?? ""}`} />}
+      <main className={`section-page${animated ? " page-anim" : ""}${section === "businesses" ? " businesses-page" : ""}${photoHero ? " mission-page" : ""}${companySlug ? " company-page bx-scope cx" : ""}${leaderSlug ? " leader-page bx-scope ld" : ""}${careerAreaSlug ? " vacancy-page bx-scope vc" : ""}${!companySlug && (section === "privacy-policy" || section === "terms-of-use" || section === "faq") ? " legal-page bx-scope lg" : ""}`}>
         {companySlug && offering ? (
           <CompanyOfferingPage offering={offering} />
         ) : companySlug && companyProfile ? (
@@ -834,7 +838,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
         ) : section === "newsroom" && article && newsKind ? (
           <NewsArticle article={article} kind={newsKind.key} kindTitle={newsKind.title} />
         ) : section === "newsroom" && newsKind ? (
-          <NewsroomListing kind={newsKind.key} title={newsKind.title} stories={newsKind.key === "events" ? nr.events : newsKind.key === "press-releases" ? nr.pressReleases : newsKind.key === "notices" ? nr.noticeStories : nr.news} />
+          <NewsroomListing kind={newsKind.key} title={newsKind.title} stories={newsKind.key === "events" ? nr.events : newsKind.key === "press-releases" ? nr.pressReleases : newsKind.key === "notices" ? nr.noticeStories : nr.news} notices={newsKind.key === "notices" ? nr.notices : undefined} />
         ) : section === "gallery" ? (
           <section className="newsroom nr-gallery-page">
             <div className="reference-wrap">
@@ -872,29 +876,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                   <h2 id="notices-title">Notices</h2>
                   <span>{nr.notices.length} {nr.notices.length === 1 ? "notice" : "notices"}</span>
                 </div>
-                <ul className="newsroom-notices">
-                  {nr.notices.slice(0, shownNotices).map((notice, index) => {
-                    const logo = getBusinessLogo(notice.company);
-                    return (
-                      <li className="newsroom-notice" key={`${notice.company}-${notice.title}`}>
-                        <div className="newsroom-notice-top">
-                          <span className="newsroom-notice-badge">Notice {String(index + 1).padStart(2, "0")}</span>
-                          <time>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
-                            {notice.date}
-                          </time>
-                        </div>
-                        <h3>{notice.href ? <Link className="newsroom-card-title-link" href={notice.href}>{notice.title}</Link> : notice.title}</h3>
-                        <div className="newsroom-notice-company">
-                          <span className="newsroom-notice-logo">
-                            {logo ? <Image src={logo} alt="" fill sizes="44px" /> : notice.company.split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase()}
-                          </span>
-                          <span>{notice.company}</span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                <NoticeCards notices={nr.notices.slice(0, shownNotices)} />
                 {nr.notices.length > shownNotices && (
                   <button type="button" className="nr-load-more" onClick={() => setShownNotices((n) => n + NEWSROOM_PAGE)}>
                     Show more notices <span className="num">({nr.notices.length - shownNotices} more)</span>

@@ -501,3 +501,35 @@
 .nr-story-gallery .nr-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .nr-story-gallery .nr-videos { grid-template-columns: 1fr; }
 @media (max-width: 640px) { .nr-story-gallery .nr-photos { grid-template-columns: 1fr; } }
+
+
+/* ---------- Notice cards: link to the notice's page ---------- */
+.newsroom-notice-link { position: relative; z-index: 1; margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; color: #e3f3c8; font: 700 14px/1 var(--font-body); text-decoration: none; }
+.newsroom-notice-link span { transition: transform .25s; }
+.newsroom-notice-link:hover { color: #fff; }
+.newsroom-notice-link:hover span { transform: translateX(4px); }
+.newsroom-notice .newsroom-card-title-link { color: inherit; }
+.newsroom-notice { transition: transform .3s cubic-bezier(.2,.8,.2,1), box-shadow .3s; }
+.newsroom-notice:hover { transform: translateY(-5px); box-shadow: 0 30px 56px -30px #1d4a24; }
+@media (max-width: 900px) { .newsroom-notices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .newsroom-notices { grid-template-columns: 1fr; } }
+
+
+/* ---------- Entrance and scroll animations (Newsroom, Gallery, Community, Careers) ---------- */
+.rv { opacity: 0; transform: translateY(32px) scale(.985); transition: opacity .75s cubic-bezier(.2,.8,.2,1) var(--rv-delay, 0ms), transform .75s cubic-bezier(.2,.8,.2,1) var(--rv-delay, 0ms); }
+.rv.rv-in { opacity: 1; transform: none; }
+.page-anim .mission-hero-tag { animation: page-hero-in .8s cubic-bezier(.2,.8,.2,1) both; }
+.page-anim .mission-hero-text { animation: page-hero-in .9s cubic-bezier(.2,.8,.2,1) .18s both; }
+.page-anim .section-page-hero::after { animation: page-hero-veil 1.2s ease both; }
+@keyframes page-hero-in { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes page-hero-veil { from { opacity: 0; } }
+/* Gentle lift on cards across these pages */
+.page-anim .newsroom-card, .page-anim .cr-card, .page-anim .community-gallery-photo { transition: transform .35s cubic-bezier(.2,.8,.2,1), box-shadow .35s; }
+.page-anim .newsroom-card:hover, .page-anim .cr-card:hover { transform: translateY(-6px); box-shadow: 0 30px 60px -36px #0b1b1080; }
+.page-anim .newsroom-card-photo img, .page-anim .cr-card-photo img, .page-anim .community-gallery-photo img, .page-anim .community-foundation-photo img { transition: transform .8s cubic-bezier(.2,.8,.2,1); }
+.page-anim .newsroom-card:hover .newsroom-card-photo img, .page-anim .cr-card:hover .cr-card-photo img, .page-anim .community-gallery-photo:hover img, .page-anim .community-foundation-photo:hover img { transform: scale(1.05); }
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1; transform: none; transition: none; }
+  .page-anim .mission-hero-tag, .page-anim .mission-hero-text, .page-anim .section-page-hero::after { animation: none; }
+  .page-anim .newsroom-card:hover, .page-anim .cr-card:hover { transform: none; }
+}

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import NewsroomGallery from "@/components/NewsroomGallery";
 import type { Story } from "@/server/public/newsroom";
+import type { CompanyNotice } from "@/data/newsroom";
+import { getBusinessLogo } from "@/data/businessLogos";
 import type { ArticleData } from "@/server/public/newsroom";
 import type { CompanyOfferingData } from "@/server/public/company-profile";
 
@@ -16,6 +18,37 @@ const remote = (src: string) => /^https?:\/\//.test(src);
 // Newsroom lists show 6 items, then 6 more each time Show more is pressed.
 export const NEWSROOM_PAGE = 6;
 const PAGE = NEWSROOM_PAGE;
+
+// The green notice cards, shared by the Newsroom page, the Notices page and
+// "More notices" under a notice.
+export function NoticeCards({ notices, start = 0 }: { notices: CompanyNotice[]; start?: number }) {
+  return (
+    <ul className="newsroom-notices">
+      {notices.map((notice, index) => {
+        const logo = getBusinessLogo(notice.company);
+        return (
+          <li className="newsroom-notice" key={`${notice.company}-${notice.title}`}>
+            <div className="newsroom-notice-top">
+              <span className="newsroom-notice-badge">Notice {String(start + index + 1).padStart(2, "0")}</span>
+              <time>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>
+                {notice.date}
+              </time>
+            </div>
+            <h3>{notice.href ? <Link className="newsroom-card-title-link" href={notice.href}>{notice.title}</Link> : notice.title}</h3>
+            <div className="newsroom-notice-company">
+              <span className="newsroom-notice-logo">
+                {logo ? <Image src={logo} alt="" fill sizes="44px" /> : notice.company.split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase()}
+              </span>
+              <span>{notice.company}</span>
+            </div>
+            {notice.href && <Link className="newsroom-notice-link" href={notice.href}>View notice <span aria-hidden="true">→</span></Link>}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 // "Read full story" for press releases; "Read more" for news and events.
 const readLabel = (href: string) => (href.startsWith("/newsroom/press-releases/") ? "Read full story" : href.startsWith("/newsroom/notices/") ? "View notice" : "Read more");
@@ -114,7 +147,7 @@ const KIND_LINKS = [
   { key: "notices", label: "Notices", href: "/newsroom/notices" },
 ];
 
-export function NewsroomListing({ kind, title, stories }: { kind: string; title: string; stories: Story[] }) {
+export function NewsroomListing({ kind, title, stories, notices }: { kind: string; title: string; stories: Story[]; notices?: CompanyNotice[] }) {
   const [shown, setShown] = useState(PAGE);
   return (
     <section className="newsroom">
@@ -127,7 +160,7 @@ export function NewsroomListing({ kind, title, stories }: { kind: string; title:
           </div>
           {stories.length ? (
             <>
-              <NewsroomCards stories={stories.slice(0, shown)} />
+              {notices ? <NoticeCards notices={notices.slice(0, shown)} /> : <NewsroomCards stories={stories.slice(0, shown)} />}
               {stories.length > shown && (
                 <button type="button" className="nr-load-more" onClick={() => setShown((n) => n + PAGE)}>
                   Show more <span className="num">({stories.length - shown} more)</span>
@@ -256,7 +289,7 @@ export function NewsArticle({ article, kind, kindTitle }: { article: ArticleData
               <h2 id="related-title">More {kindTitle.toLowerCase()}</h2>
               <Link className="newsroom-card-link" href={`/newsroom/${kind}`}>View all <span aria-hidden="true">→</span></Link>
             </div>
-            <NewsroomCards stories={article.related} />
+            {article.relatedNotices ? <NoticeCards notices={article.relatedNotices} /> : <NewsroomCards stories={article.related} />}
           </section>
         )}
       </div>
