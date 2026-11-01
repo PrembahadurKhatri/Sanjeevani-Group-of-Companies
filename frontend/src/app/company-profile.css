@@ -275,16 +275,20 @@
 .cxp-tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: var(--space-lg); }
 .cxp-tiles li { min-height: 168px; position: relative; isolation: isolate; overflow: hidden; padding: var(--space-xl) var(--space-lg) var(--space-lg); display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-md); border: 1px solid var(--bx-rule); border-radius: 22px; background: radial-gradient(220px 140px at 100% 0%, rgb(196 229 138 / 0.22), transparent 70%), linear-gradient(160deg, var(--bx-paper) 0%, var(--bx-paper-2) 100%); box-shadow: 0 18px 40px -36px color-mix(in oklab, var(--bx-shade) 60%, transparent); transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short), border-color var(--dur-short); }
 .cxp-tiles li::before { position: absolute; z-index: -1; inset: 0; background: radial-gradient(260px 160px at 100% 0%, rgb(196 229 138 / 0.28), transparent 65%), linear-gradient(150deg, #24521a 0%, #3a7020 100%); content: ""; opacity: 0; transition: opacity var(--dur-long) var(--ease-out); }
+.cxp-tiles li { border-color: transparent; box-shadow: 0 24px 46px -34px rgb(21 52 18 / 0.7); }
 .cxp-tiles li:hover { transform: translateY(-5px); border-color: transparent; box-shadow: 0 30px 56px -34px rgb(21 52 18 / 0.75); }
-.cxp-tiles li:hover::before { opacity: 1; }
+.cxp-tiles li::before { opacity: 1; }
+.cxp-tiles li:hover::before { filter: brightness(1.08); }
 .cxp-tiles strong { position: relative; max-width: 85%; color: var(--bx-ink-2); font: 600 clamp(1.25rem, 0.6vw + 1rem, 1.5rem)/1.25 var(--bx-display); letter-spacing: -0.01em; transition: color var(--dur-short); }
 .cxp-tile-mark { width: 110px; height: 110px; position: absolute; z-index: -1; top: -22px; right: -22px; color: var(--bx-accent); opacity: 0.08; transition: opacity var(--dur-short), transform var(--dur-long) var(--ease-out); }
 .cxp-tile-mark .group-emblem { width: 100%; height: 100%; }
-.cxp-tiles li:hover .cxp-tile-mark { opacity: 0.16; transform: rotate(-8deg) scale(1.06); }
-.cxp-tiles li:hover .cxp-tile-mark .group-emblem { filter: brightness(0) invert(1); }
+.cxp-tile-mark { opacity: 0.14; }
+.cxp-tile-mark .group-emblem { filter: brightness(0) invert(1); }
+.cxp-tiles li:hover .cxp-tile-mark { opacity: 0.22; transform: rotate(-8deg) scale(1.06); }
 .cxp-tile-line { width: 40px; height: 3px; border-radius: 3px; background: var(--bx-accent); transition: width var(--dur-long) var(--ease-out), background-color var(--dur-short); }
-.cxp-tiles li:hover strong { color: #fff; }
-.cxp-tiles li:hover .cxp-tile-line { width: 72px; background: #c4e58a; }
+.cxp-tiles strong { color: #fff; }
+.cxp-tile-line { background: #c4e58a; }
+.cxp-tiles li:hover .cxp-tile-line { width: 72px; }
 .cxp-offerings { grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: var(--space-lg); }
 .cxp-offering { overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--bx-rule); border-radius: 22px; background: var(--bx-paper); transition: transform var(--dur-short) var(--ease-out), box-shadow var(--dur-short); }
 .cxp-offering:hover { transform: translateY(-3px); box-shadow: 0 26px 48px -34px color-mix(in oklab, var(--bx-shade) 55%, transparent); }
