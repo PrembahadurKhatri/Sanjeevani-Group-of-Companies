@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import GroupEmblem from "@/components/GroupEmblem";
 import NewsroomGallery from "@/components/NewsroomGallery";
 import type { CompanyProfileData, ProfileLeader } from "@/server/public/company-profile";
@@ -11,27 +11,56 @@ import type { SectionKey } from "@/lib/company-sections";
 // One company's profile page (/businesses/<slug>), built from what is
 // published in Admin → Companies. The sections, their order and labels are
 // the company's own (see lib/company-sections.ts); anything not provided is
-// simply not shown.
+// simply not shown. Below the hero it reads like the company's own homepage:
+// an introduction card with key figures, then each section in turn.
 
 type Img = { url: string; alt: string } | null;
 const remote = (src: string) => /^https?:\/\//.test(src);
 const TIER_LABEL = { BOARD: "Board of directors", EXECUTIVE: "Executive leadership", TEAM: "Management team" } as const;
 const KIND_LABEL: Record<string, string> = { PROJECT: "Project", AWARD: "Award", CERTIFICATION: "Certification", ACHIEVEMENT: "Achievement" };
 const RELATION_LABEL: Record<string, string> = { SUBSIDIARY: "Subsidiary", BRAND: "Brand", DIVISION: "Division", ASSOCIATE: "Associate", PARTNER: "Partner" };
+const EYEBROW: Partial<Record<SectionKey, string>> = {
+  overview: "Who we are", about: "Our story", services: "What we offer", leadership: "Our people", businesses: "Our family of businesses",
+  projects: "Our work", news: "Latest updates", careers: "Join us", gallery: "In pictures", contact: "Contact",
+};
 const paragraphs = (text: string | null | undefined) => (text ?? "").split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 const host = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+const anchor = (key: SectionKey) => (key === "gallery" ? "gallery-section" : key);
+
+// Line icons drawn on a 24px grid, inheriting the text colour.
+const ICONS = {
+  calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
+  pin: <><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z" /><circle cx="12" cy="9.5" r="2.5" /></>,
+  phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" />,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  building: <><path d="M4 21V5l8-3v19M12 21h8V9l-8-3" /><path d="M8 8h1M8 12h1M8 16h1M15 12h2M15 16h2" /></>,
+  target: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></>,
+  eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
+  spark: <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" />,
+  arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
+  briefcase: <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18" /></>,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8" /></>,
+  news: <><path d="M4 5h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5Z" /><path d="M17 9h3v10a2 2 0 0 1-2 2M8 9h5M8 13h5M8 17h3" /></>,
+  award: <><circle cx="12" cy="9" r="6" /><path d="m8.5 14-1.5 7 5-2.5 5 2.5-1.5-7" /></>,
+} as const;
+function Icon({ name }: { name: keyof typeof ICONS }) {
+  return <svg className="cxp-icon" viewBox="0 0 24 24" aria-hidden="true">{ICONS[name]}</svg>;
+}
 
 function Photo({ image, sizes, className }: { image: Img; sizes: string; className?: string }) {
   if (!image) return null;
   return <Image className={className} src={image.url} alt={image.alt} fill sizes={sizes} unoptimized={remote(image.url)} />;
 }
 
-function SectionHead({ id, label, intro }: { id: string; label: string; intro?: string }) {
+function SectionHead({ id, eyebrow, label, intro, align }: { id: string; eyebrow?: string; label: string; intro?: string; align?: "center" }) {
   return (
-    <header className="cx-section-head">
+    <header className={`cxp-head${align === "center" ? " is-center" : ""}`}>
+      {eyebrow && <p className="cxp-eyebrow">{eyebrow}</p>}
       <h2 id={`${id}-title`}>{label}</h2>
-      {intro && <p className="bx-lead">{intro}</p>}
+      {intro && <p className="cxp-lead">{intro}</p>}
     </header>
   );
 }
@@ -91,8 +120,9 @@ function ContactForm({ companySlug, companyName }: { companySlug: string; compan
   }
 
   return (
-    <form className="cx-form" onSubmit={submit} aria-label={`Send a message to ${companyName}`}>
-      <h3>Send a message</h3>
+    <form className="cx-form cxp-form" onSubmit={submit} aria-label={`Send a message to ${companyName}`}>
+      <h3>Send us a message</h3>
+      <p className="cxp-form-intro">We usually reply within two working days.</p>
       <div className="cx-form-grid">
         <label>Full name<input name="name" required minLength={2} maxLength={120} autoComplete="name" /></label>
         <label>Email<input name="email" type="email" required maxLength={254} autoComplete="email" /></label>
@@ -117,74 +147,120 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
   const mdPhoto = md?.photo?.url ?? data.chairman?.photo?.url ?? "/chairman.png";
   const primary = c.locations.find((l) => l.isPrimary) ?? c.locations[0];
   const otherLocations = c.locations.filter((l) => l !== primary);
-  const facts: { label: string; value: string; href?: string; external?: boolean }[] = [
-    { label: "Sector", value: c.sectorLabel },
-    ...(c.sector ? [{ label: "Part of", value: c.sector.name, href: `/businesses?group=${c.sector.slug}` }] : []),
-    ...(c.industry ? [{ label: "Industry", value: c.industry }] : []),
-    ...(c.establishedYear ? [{ label: "Established", value: String(c.establishedYear) }] : []),
-    ...(c.headquarters ? [{ label: "Headquarters", value: c.headquarters }] : []),
-    ...c.keyFacts,
-    { label: "Website", value: c.website ? host(c.website) : "Coming soon", href: c.website ?? undefined, external: true },
+  const phone = c.phone ?? primary?.phone ?? null;
+  const email = c.email ?? primary?.email ?? "info@sanjeevanigroup.com";
+  const address = primary?.address || c.headquarters || "Nepal";
+  const serviceCount = data.offerings.length || c.services.length;
+  const [active, setActive] = useState<SectionKey>("overview");
+
+  // Key figures for the introduction card: founding year, years of service,
+  // the company's own numeric facts, and how many services it lists.
+  const stats: { value: string; label: string; note?: string }[] = [];
+  if (c.establishedYear) {
+    stats.push({ value: String(c.establishedYear), label: "Established" });
+    const years = new Date().getFullYear() - c.establishedYear;
+    if (years >= 2) stats.push({ value: `${years}+`, label: "Years of service" });
+  }
+  for (const fact of c.keyFacts) {
+    const match = /^([\d][\d,.]*\+?)\s*(.*)$/.exec(fact.value);
+    if (match) stats.push({ value: match[1], label: fact.label, note: match[2] || undefined });
+  }
+  if (serviceCount > 1) stats.push({ value: String(serviceCount), label: label("services") });
+  if (data.vacancies.length) stats.push({ value: String(data.vacancies.length), label: data.vacancies.length === 1 ? "Open role" : "Open roles" });
+
+  const glance: { icon: keyof typeof ICONS; label: string; value: ReactNode }[] = [
+    { icon: "building", label: "Sector", value: c.sectorLabel },
+    ...(c.industry ? [{ icon: "briefcase" as const, label: "Industry", value: c.industry }] : []),
+    ...(c.establishedYear ? [{ icon: "calendar" as const, label: "Established", value: <span className="num">{c.establishedYear}</span> }] : []),
+    ...(c.headquarters ? [{ icon: "pin" as const, label: "Headquarters", value: c.headquarters }] : []),
+    ...c.keyFacts.map((f) => ({ icon: "spark" as const, label: f.label, value: f.value })),
+    ...(c.sector ? [{ icon: "users" as const, label: "Part of", value: <Link href={`/businesses?group=${c.sector.slug}`}>Sanjeevani Group · {c.sector.name}</Link> }] : []),
+    { icon: "globe", label: "Website", value: c.website ? <a href={c.website} target="_blank" rel="noreferrer">{host(c.website)}</a> : "Coming soon" },
   ];
+
+  // Highlight the section in view in the section bar.
+  useEffect(() => {
+    if (!("IntersectionObserver" in window)) return;
+    const targets = data.sections.map((s) => document.getElementById(anchor(s.key))).filter((el): el is HTMLElement => Boolean(el));
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      const key = visible ? data.sections.find((s) => anchor(s.key) === visible.target.id)?.key : undefined;
+      if (key) setActive(key);
+    }, { rootMargin: "-35% 0px -55% 0px" });
+    targets.forEach((t) => observer.observe(t));
+    return () => observer.disconnect();
+  }, [data.sections]);
+
+  // Sections fade up as they come into view (not for reduced-motion users).
+  useEffect(() => {
+    const items = Array.from(document.querySelectorAll<HTMLElement>(".cxp-reveal"));
+    if (!("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      items.forEach((el) => el.classList.add("is-in"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("is-in"); observer.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    items.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [data.sections]);
 
   const sections: Record<SectionKey, () => JSX.Element | null> = {
     overview: () => (
-      <section className="cx-overview cx-block" id="overview" aria-labelledby="overview-title">
-        <div className="bx-wrap cx-overview-grid">
-          <div className="cx-overview-copy">
-            <span className="cx-logo" aria-hidden="true">
-              {c.logo ? <Image src={c.logo.url} alt="" fill sizes="96px" unoptimized={remote(c.logo.url)} /> : <strong>{initials(c.name)}</strong>}
-            </span>
-            <h2 id="overview-title">{label("overview")}</h2>
-            <p className="bx-lead">{c.description}</p>
-            {intro.map((p) => <p className="cx-body" key={p}>{p}</p>)}
+      <section className="cxp-section cxp-overview cx-block" id="overview" aria-labelledby="overview-title">
+        <div className="bx-wrap cxp-overview-grid cxp-reveal">
+          <div className="cxp-overview-copy">
+            <SectionHead id="overview" eyebrow={EYEBROW.overview} label={label("overview")} />
+            <p className="cxp-statement">{c.description}</p>
+            {intro.map((p) => <p className="cxp-body" key={p}>{p}</p>)}
+            {!intro.length && <p className="cxp-body">{c.name} is one of the independent businesses of Sanjeevani Group, working across {c.sectorLabel.toLowerCase()} in Nepal.</p>}
           </div>
-          <dl className="cx-facts">
-            {facts.map((f) => (
-              <div key={f.label}>
-                <dt>{f.label}</dt>
-                <dd className={/^\d+$/.test(f.value) ? "num" : undefined}>
-                  {f.href ? (f.external ? <a href={f.href} target="_blank" rel="noreferrer">{f.value}</a> : <Link href={f.href}>{f.value}</Link>) : f.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <aside className="cxp-glance" aria-label={`${c.name} at a glance`}>
+            <h3>At a glance</h3>
+            <dl>
+              {glance.map((g) => (
+                <div key={g.label}>
+                  <dt><Icon name={g.icon} />{g.label}</dt>
+                  <dd>{g.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <span className="cxp-glance-mark" aria-hidden="true"><GroupEmblem /></span>
+          </aside>
         </div>
-        <Highlights />
+        {explore()}
       </section>
     ),
     about: () => (
-      <section className="cx-block cx-about" id="about" aria-labelledby="about-title">
+      <section className="cxp-section cxp-tint cx-block" id="about" aria-labelledby="about-title">
         <div className="bx-wrap">
-          <SectionHead id="about" label={label("about")} />
-          <div className="cx-about-grid">
-            {(c.background || c.history) && (
-              <div className="cx-about-story">
-                {c.background && <><h3>Background</h3>{paragraphs(c.background).map((p) => <p key={p}>{p}</p>)}</>}
-                {c.history && <><h3>Our history</h3>{paragraphs(c.history).map((p) => <p key={p}>{p}</p>)}</>}
-              </div>
-            )}
-            {(c.mission || c.vision) && (
-              <div className="cx-about-cards">
-                {c.mission && <article className="cx-statement"><h3>Mission</h3><p>{c.mission}</p></article>}
-                {c.vision && <article className="cx-statement"><h3>Vision</h3><p>{c.vision}</p></article>}
-              </div>
-            )}
-          </div>
-          {c.coreValues.length > 0 && (
-            <div className="cx-values">
-              <h3>Core values</h3>
-              <ul>{c.coreValues.map((v) => <li key={v}>{v}</li>)}</ul>
+          <div className="cxp-reveal"><SectionHead id="about" eyebrow={EYEBROW.about} label={label("about")} /></div>
+          {(c.mission || c.vision) && (
+            <div className="cxp-purpose cxp-reveal">
+              {c.mission && <article className="cxp-purpose-card"><span className="cxp-purpose-icon"><Icon name="target" /></span><h3>Our mission</h3><p>{c.mission}</p></article>}
+              {c.vision && <article className="cxp-purpose-card is-light"><span className="cxp-purpose-icon"><Icon name="eye" /></span><h3>Our vision</h3><p>{c.vision}</p></article>}
             </div>
           )}
-          {c.philosophy && <blockquote className="cx-philosophy"><h3>Our philosophy</h3>{paragraphs(c.philosophy).map((p) => <p key={p}>{p}</p>)}</blockquote>}
+          {(c.background || c.history) && (
+            <div className="cxp-story cxp-reveal">
+              {c.background && <div><h3>Background</h3>{paragraphs(c.background).map((p) => <p key={p}>{p}</p>)}</div>}
+              {c.history && <div><h3>Our history</h3>{paragraphs(c.history).map((p) => <p key={p}>{p}</p>)}</div>}
+            </div>
+          )}
+          {c.coreValues.length > 0 && (
+            <div className="cxp-values cxp-reveal">
+              <h3>Our core values</h3>
+              <ol>{c.coreValues.map((v, i) => <li key={v}><span className="num">{String(i + 1).padStart(2, "0")}</span>{v}</li>)}</ol>
+            </div>
+          )}
+          {c.philosophy && <blockquote className="cxp-quote cxp-reveal"><p>{paragraphs(c.philosophy)[0]}</p>{paragraphs(c.philosophy).slice(1).map((p) => <p className="cxp-quote-more" key={p}>{p}</p>)}<cite>Our philosophy</cite></blockquote>}
           {data.milestones.length > 0 && (
-            <div className="cx-milestones">
+            <div className="cxp-timeline cxp-reveal">
               <h3>Milestones</h3>
               <ol>
                 {data.milestones.map((m) => (
                   <li key={m.id}>
-                    {m.date && <span className="cx-milestone-date num">{m.date}</span>}
+                    {m.date && <span className="cxp-timeline-date num">{m.date}</span>}
                     <strong>{m.title}</strong>
                     {m.description && <p>{m.description}</p>}
                   </li>
@@ -197,24 +273,28 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       </section>
     ),
     services: () => (
-      <section className="cx-block cx-services" id="services" aria-labelledby="services-title">
+      <section className="cxp-section cx-block" id="services" aria-labelledby="services-title">
         <div className="bx-wrap">
-          <SectionHead id="services" label={label("services")} />
+          <div className="cxp-reveal"><SectionHead id="services" eyebrow={EYEBROW.services} label={label("services")} intro={serviceCount ? `${serviceCount} ${label("services").toLowerCase()} offered by ${c.shortName ?? c.name}.` : undefined} /></div>
           {data.offerings.length > 0 ? (
-            <ul className="cx-cards">
-              {data.offerings.map((o) => (
-                <li key={o.slug} className="cx-card">
-                  {o.image && <div className="cx-card-photo"><Photo image={o.image} sizes="(max-width: 640px) 92vw, 380px" /></div>}
-                  <div className="cx-card-body">
+            <ul className="cxp-offerings cxp-reveal">
+              {data.offerings.map((o, i) => (
+                <li key={o.slug} className="cxp-offering">
+                  <div className="cxp-offering-media">
+                    {o.image ? <Photo image={o.image} sizes="(max-width: 640px) 92vw, 380px" /> : <span className="cxp-offering-num num">{String(i + 1).padStart(2, "0")}</span>}
+                  </div>
+                  <div className="cxp-offering-body">
                     <h3>{o.title}</h3>
                     {o.summary && <p>{o.summary}</p>}
-                    {o.hasDetail && <Link className="cx-text-link" href={`/businesses/${c.slug}/${o.slug}`}>Learn more<span className="visually-hidden"> about {o.title}</span></Link>}
+                    {o.hasDetail && <Link className="cxp-more" href={`/businesses/${c.slug}/${o.slug}`}>Learn more <Icon name="arrow" /><span className="visually-hidden"> about {o.title}</span></Link>}
                   </div>
                 </li>
               ))}
             </ul>
           ) : c.services.length > 0 ? (
-            <ul className="cx-chips">{c.services.map((s) => <li key={s}>{s}</li>)}</ul>
+            <ul className="cxp-tiles cxp-reveal">
+              {c.services.map((s, i) => <li key={s}><span className="num">{String(i + 1).padStart(2, "0")}</span><strong>{s}</strong></li>)}
+            </ul>
           ) : (
             <p className="cx-empty">Details of our {label("services").toLowerCase()} will be added soon.</p>
           )}
@@ -222,10 +302,10 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       </section>
     ),
     leadership: () => (
-      <section className="cx-leaders cx-block" id="leadership" aria-labelledby="leadership-title">
+      <section className="cx-leaders cx-block cxp-leaders" id="leadership" aria-labelledby="leadership-title">
         <div className="bx-wrap">
-          <h2 id="leadership-title">{label("leadership")}</h2>
-          <div className="cx-leader-grid">
+          <div className="cxp-reveal"><SectionHead id="leadership" eyebrow={EYEBROW.leadership} label={label("leadership")} intro={`The people guiding ${c.shortName ?? c.name} as part of Sanjeevani Group.`} /></div>
+          <div className="cx-leader-grid cxp-reveal">
             {/* Both cards follow the Leadership page's chairman panel. */}
             <article className="cx-leader">
               <div className="cx-leader-photo">
@@ -256,7 +336,7 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
             const people = group.people.filter((p) => p !== md);
             if (!people.length) return null;
             return (
-              <div className="cx-tier" key={group.tier}>
+              <div className="cx-tier cxp-reveal" key={group.tier}>
                 <h3>{TIER_LABEL[group.tier]}</h3>
                 <ul className="cx-people">{people.map((p) => <LeaderCard key={p.key} person={p} />)}</ul>
               </div>
@@ -266,11 +346,11 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       </section>
     ),
     businesses: () => (
-      <section className="cx-block" id="businesses" aria-labelledby="businesses-title">
+      <section className="cxp-section cx-block" id="businesses" aria-labelledby="businesses-title">
         <div className="bx-wrap">
-          <SectionHead id="businesses" label={label("businesses")} />
+          <div className="cxp-reveal"><SectionHead id="businesses" eyebrow={EYEBROW.businesses} label={label("businesses")} /></div>
           {data.relations.length ? (
-            <ul className="cx-cards cx-cards-compact">
+            <ul className="cx-cards cx-cards-compact cxp-reveal">
               {data.relations.map((r) => {
                 const body = (
                   <>
@@ -294,14 +374,14 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       </section>
     ),
     projects: () => (
-      <section className="cx-block cx-alt" id="projects" aria-labelledby="projects-title">
+      <section className="cxp-section cxp-tint cx-block" id="projects" aria-labelledby="projects-title">
         <div className="bx-wrap">
-          <SectionHead id="projects" label={label("projects")} />
+          <div className="cxp-reveal"><SectionHead id="projects" eyebrow={EYEBROW.projects} label={label("projects")} /></div>
           {data.achievements.length ? (
-            <ul className="cx-cards">
+            <ul className="cx-cards cxp-reveal">
               {data.achievements.map((a) => (
                 <li key={a.id} className="cx-card">
-                  {a.image && <div className="cx-card-photo"><Photo image={a.image} sizes="(max-width: 640px) 92vw, 380px" /></div>}
+                  <div className="cx-card-photo">{a.image ? <Photo image={a.image} sizes="(max-width: 640px) 92vw, 380px" /> : <span className="cx-card-placeholder" aria-hidden="true"><Icon name="award" /></span>}</div>
                   <div className="cx-card-body">
                     <p className="cx-card-meta"><span className="cx-badge">{KIND_LABEL[a.kind] ?? a.kind}</span>{a.date && <span className="num">{a.date}</span>}</p>
                     <h3>{a.title}</h3>
@@ -315,11 +395,14 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       </section>
     ),
     news: () => (
-      <section className="cx-block" id="news" aria-labelledby="news-title">
+      <section className="cxp-section cx-block" id="news" aria-labelledby="news-title">
         <div className="bx-wrap">
-          <SectionHead id="news" label={label("news")} />
+          <div className="cxp-head-row cxp-reveal">
+            <SectionHead id="news" eyebrow={EYEBROW.news} label={label("news")} />
+            <Link className="cxp-more" href="/newsroom">All news <Icon name="arrow" /></Link>
+          </div>
           {data.news.length ? (
-            <ul className="cx-cards">
+            <ul className="cx-cards cxp-reveal">
               {data.news.map((n) => (
                 <li key={n.id} className="cx-card">
                   <Link href={n.href} className="cx-card-link">
@@ -328,111 +411,114 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
                       <time className="cx-card-meta num">{n.date}</time>
                       <h3>{n.title}</h3>
                       {n.excerpt && <p>{n.excerpt}</p>}
-                      <span className="cx-text-link">Read more</span>
+                      <span className="cxp-more">Read more <Icon name="arrow" /></span>
                     </div>
                   </Link>
                 </li>
               ))}
             </ul>
           ) : <p className="cx-empty">News from {c.name} will appear here.</p>}
-          <p className="cx-more"><Link className="cx-text-link" href="/newsroom">All news from Sanjeevani Group</Link></p>
         </div>
       </section>
     ),
     careers: () => (
-      <section className="cx-block cx-alt" id="careers" aria-labelledby="careers-title">
-        <div className="bx-wrap">
-          <SectionHead id="careers" label={label("careers")} />
-          {data.vacancies.length ? (
-            <ul className="cx-jobs">
+      <section className="cxp-careers cx-block" id="careers" aria-labelledby="careers-title">
+        <div className="bx-wrap cxp-careers-grid cxp-reveal">
+          <div className="cxp-careers-copy">
+            <p className="cxp-eyebrow">{EYEBROW.careers}</p>
+            <h2 id="careers-title">{label("careers")}</h2>
+            <p>{data.vacancies.length ? `Build your career with ${c.shortName ?? c.name}. ${data.vacancies.length} ${data.vacancies.length === 1 ? "role is" : "roles are"} open right now.` : `There are no open vacancies at ${c.shortName ?? c.name} right now. New roles across Sanjeevani Group are posted on our careers page.`}</p>
+            <Link className="cxp-button is-light" href="/careers">Explore careers <Icon name="arrow" /></Link>
+          </div>
+          {data.vacancies.length > 0 && (
+            <ul className="cxp-jobs">
               {data.vacancies.map((v) => (
-                <li key={v.id} className="cx-job">
-                  <div>
-                    <h3>{v.title}</h3>
-                    <p className="cx-job-meta"><span>{v.location}</span><span>{v.type}</span><span>Apply by <span className="num">{v.deadline}</span></span></p>
-                  </div>
-                  <Link className="bx-button" href={v.href}>View and apply<span className="visually-hidden">: {v.title}</span></Link>
+                <li key={v.id}>
+                  <Link href={v.href}>
+                    <span className="cxp-job-title">{v.title}</span>
+                    <span className="cxp-job-meta"><span>{v.location}</span><span>{v.type}</span><span>Apply by <span className="num">{v.deadline}</span></span></span>
+                    <Icon name="arrow" />
+                  </Link>
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="cx-empty">There are no open vacancies at {c.name} right now. <Link className="cx-text-link" href="/careers">See careers across Sanjeevani Group</Link>.</p>
           )}
         </div>
       </section>
     ),
     gallery: () => (
-      <section className="cx-block cx-gallery" id="gallery-section" aria-label={label("gallery")}>
-        <div className="bx-wrap">
+      <section className="cxp-section cx-block cx-gallery" id="gallery-section" aria-label={label("gallery")}>
+        <div className="bx-wrap cxp-reveal">
           {data.gallery.length ? (
             <NewsroomGallery renderYouTube={() => null} photos={data.gallery} videos={[]} heading={label("gallery")} idPrefix="company-gallery" photosOnly pageSize={9} />
           ) : (
-            <><SectionHead id="gallery-section" label={label("gallery")} /><p className="cx-empty">Photos will be added soon.</p></>
+            <><SectionHead id="gallery-section" eyebrow={EYEBROW.gallery} label={label("gallery")} /><p className="cx-empty">Photos will be added soon.</p></>
           )}
         </div>
       </section>
     ),
     contact: () => (
-      <section className="cx-contact cx-block" id="contact" aria-labelledby="contact-title">
-        <div className="bx-wrap cx-contact-grid">
-          <h2 id="contact-title">{label("contact")}</h2>
-          <dl className="cx-contact-list">
-            <div><dt>Email</dt><dd><a href={`mailto:${c.email ?? primary?.email ?? "info@sanjeevanigroup.com"}`}>{c.email ?? primary?.email ?? "info@sanjeevanigroup.com"}</a></dd></div>
-            {(c.phone ?? primary?.phone) && <div><dt>Phone</dt><dd><a href={`tel:${(c.phone ?? primary?.phone ?? "").replace(/\s+/g, "")}`}>{c.phone ?? primary?.phone}</a></dd></div>}
-            <div><dt>{primary ? primary.name : "Address"}</dt><dd>{primary?.address || c.headquarters || "Nepal"}</dd></div>
-            {c.registeredAddress && <div><dt>Registered office</dt><dd>{c.registeredAddress}</dd></div>}
-            {c.officeHours && <div><dt>Office hours</dt><dd>{c.officeHours}</dd></div>}
-            {c.website && <div><dt>Website</dt><dd><a href={c.website} target="_blank" rel="noreferrer">{host(c.website)}</a></dd></div>}
-          </dl>
-          {otherLocations.length > 0 && (
-            <div className="cx-locations">
-              <h3>Other offices</h3>
-              <ul>
-                {otherLocations.map((l) => (
-                  <li key={l.name + l.address}>
-                    <strong>{l.name}</strong>
-                    {l.address && <span>{l.address}</span>}
-                    {l.phone && <a href={`tel:${l.phone.replace(/\s+/g, "")}`}>{l.phone}</a>}
-                    {l.email && <a href={`mailto:${l.email}`}>{l.email}</a>}
-                  </li>
-                ))}
+      <section className="cxp-section cxp-tint cxp-contact cx-block" id="contact" aria-labelledby="contact-title">
+        <div className="bx-wrap">
+          <div className="cxp-reveal"><SectionHead id="contact" eyebrow={EYEBROW.contact} label={label("contact")} intro={`Questions, appointments or partnerships: reach ${c.shortName ?? c.name} directly.`} /></div>
+          <div className="cxp-contact-grid cxp-reveal">
+            <aside className="cxp-contact-card">
+              <ul className="cxp-contact-list">
+                <li><Icon name="pin" /><span><small>{primary ? primary.name : "Address"}</small>{address}</span></li>
+                {phone && <li><Icon name="phone" /><span><small>Phone</small><a href={`tel:${phone.replace(/\s+/g, "")}`}>{phone}</a></span></li>}
+                <li><Icon name="mail" /><span><small>Email</small><a href={`mailto:${email}`}>{email}</a></span></li>
+                {c.website && <li><Icon name="globe" /><span><small>Website</small><a href={c.website} target="_blank" rel="noreferrer">{host(c.website)}</a></span></li>}
+                {c.officeHours && <li><Icon name="clock" /><span><small>Office hours</small>{c.officeHours}</span></li>}
+                {c.registeredAddress && <li><Icon name="building" /><span><small>Registered office</small>{c.registeredAddress}</span></li>}
               </ul>
-            </div>
-          )}
-          <div className="cx-contact-links">
-            {(c.mapUrl || primary?.address || c.headquarters) && (
-              <a className="cx-text-link" href={c.mapUrl ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name}, ${primary?.address || c.headquarters}`)}`} target="_blank" rel="noopener noreferrer">Get directions</a>
-            )}
-            {c.social.map((s) => <a className="cx-text-link" key={s.label} href={s.href} target="_blank" rel="noopener noreferrer">{s.label}</a>)}
+              {otherLocations.length > 0 && (
+                <div className="cxp-offices">
+                  <h3>Other offices</h3>
+                  <ul>
+                    {otherLocations.map((l) => (
+                      <li key={l.name + l.address}><strong>{l.name}</strong>{l.address && <span>{l.address}</span>}{l.phone && <a href={`tel:${l.phone.replace(/\s+/g, "")}`}>{l.phone}</a>}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="cxp-contact-actions">
+                <a className="cxp-button is-light" href={c.mapUrl ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name}, ${address}`)}`} target="_blank" rel="noopener noreferrer"><Icon name="pin" />Get directions</a>
+                {c.social.map((s) => <a className="cxp-social" key={s.label} href={s.href} target="_blank" rel="noopener noreferrer">{s.label}</a>)}
+              </div>
+              <span className="cxp-glance-mark" aria-hidden="true"><GroupEmblem /></span>
+            </aside>
+            <ContactForm companySlug={c.slug} companyName={c.name} />
           </div>
-          <ContactForm companySlug={c.slug} companyName={c.name} />
         </div>
       </section>
     ),
   };
 
-  // Overview previews of the other sections that have something to show.
-  function Highlights() {
-    const blocks: JSX.Element[] = [];
-    if (has("services") && data.offerings.length) blocks.push(
-      <div key="services" className="cx-highlight"><h3>{label("services")}</h3><ul>{data.offerings.slice(0, 4).map((o) => <li key={o.slug}>{o.title}</li>)}</ul><a className="cx-text-link" href="#services">See all</a></div>,
+  // A row of links into the page's other sections, under the overview.
+  function explore() {
+    const tiles: { key: SectionKey; icon: keyof typeof ICONS; text: string }[] = [];
+    if (has("about")) tiles.push({ key: "about", icon: "eye", text: c.mission ? "Mission, vision and story" : "Our story" });
+    if (has("services") && serviceCount) tiles.push({ key: "services", icon: "spark", text: `${serviceCount} ${label("services").toLowerCase()}` });
+    if (has("leadership")) tiles.push({ key: "leadership", icon: "users", text: md ? `${md.name}, Managing Director` : "Chairman and leadership team" });
+    if (has("projects") && data.achievements.length) tiles.push({ key: "projects", icon: "award", text: `${data.achievements.length} highlights` });
+    if (has("news") && data.news.length) tiles.push({ key: "news", icon: "news", text: data.news[0].title });
+    if (has("careers")) tiles.push({ key: "careers", icon: "briefcase", text: data.vacancies.length ? `${data.vacancies.length} open ${data.vacancies.length === 1 ? "role" : "roles"}` : "Work with us" });
+    tiles.push({ key: "contact", icon: "phone", text: phone ?? "Send us a message" });
+    return (
+      <div className="bx-wrap cxp-reveal">
+        <ul className="cxp-explore">
+          {tiles.map((t) => (
+            <li key={t.key}>
+              <a href={`#${anchor(t.key)}`}>
+                <span className="cxp-explore-icon"><Icon name={t.icon} /></span>
+                <span className="cxp-explore-text"><strong>{label(t.key)}</strong><span>{t.text}</span></span>
+                <span className="cxp-explore-arrow"><Icon name="arrow" /></span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
     );
-    if (has("leadership")) blocks.push(
-      <div key="leadership" className="cx-highlight"><h3>{label("leadership")}</h3><ul><li>{data.chairman?.name ?? "C.A. Khuma Parsad Aryal"}, Chairman</li>{md && <li>{md.name}, Managing Director</li>}{data.leaders.flatMap((g) => g.people).filter((p) => p !== md).slice(0, 2).map((p) => <li key={p.key}>{p.name}, {p.title}</li>)}</ul><a className="cx-text-link" href="#leadership">Meet the team</a></div>,
-    );
-    if (has("projects") && data.achievements.length) blocks.push(
-      <div key="projects" className="cx-highlight"><h3>{label("projects")}</h3><ul>{data.achievements.slice(0, 3).map((a) => <li key={a.id}>{a.title}</li>)}</ul><a className="cx-text-link" href="#projects">See all</a></div>,
-    );
-    if (has("news") && data.news.length) blocks.push(
-      <div key="news" className="cx-highlight"><h3>Latest news</h3><ul>{data.news.slice(0, 2).map((n) => <li key={n.id}><Link href={n.href}>{n.title}</Link></li>)}</ul><a className="cx-text-link" href="#news">More news</a></div>,
-    );
-    if (has("careers") && data.vacancies.length) blocks.push(
-      <div key="careers" className="cx-highlight"><h3>Current vacancies</h3><ul>{data.vacancies.slice(0, 3).map((v) => <li key={v.id}><Link href={v.href}>{v.title}</Link></li>)}</ul><a className="cx-text-link" href="#careers">{data.vacancies.length} open {data.vacancies.length === 1 ? "role" : "roles"}</a></div>,
-    );
-    blocks.push(
-      <div key="contact" className="cx-highlight"><h3>Contact</h3><ul>{(c.phone ?? primary?.phone) && <li>{c.phone ?? primary?.phone}</li>}<li>{c.email ?? primary?.email ?? "info@sanjeevanigroup.com"}</li></ul><a className="cx-text-link" href="#contact">Get in touch</a></div>,
-    );
-    return <div className="bx-wrap"><div className="cx-highlights">{blocks}</div></div>;
   }
 
   return (
@@ -454,10 +540,43 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
         </div>
       </section>
 
+      {/* Introduction card: who the company is, what to do next, key figures. */}
+      <section className="cxp-intro" aria-label={`About ${c.name}`}>
+        <div className="bx-wrap">
+          <div className="cxp-intro-card">
+            <div className="cxp-intro-main">
+              <span className="cxp-intro-logo" aria-hidden="true">
+                {c.logo ? <Image src={c.logo.url} alt="" fill sizes="88px" unoptimized={remote(c.logo.url)} /> : <strong>{initials(c.name)}</strong>}
+              </span>
+              <div className="cxp-intro-copy">
+                <p className="cxp-eyebrow">{c.sector?.name ?? c.sectorLabel} · Sanjeevani Group</p>
+                <h2>{c.name}</h2>
+                {c.headquarters && <p className="cxp-intro-place"><Icon name="pin" />{c.headquarters}</p>}
+              </div>
+              <div className="cxp-intro-actions">
+                {c.website && <a className="cxp-button" href={c.website} target="_blank" rel="noreferrer">Visit website <Icon name="arrow" /></a>}
+                <a className={c.website ? "cxp-button is-ghost" : "cxp-button"} href="#contact">Get in touch</a>
+                {data.vacancies.length > 0 && <a className="cxp-button is-ghost" href="#careers">Careers</a>}
+              </div>
+            </div>
+            {stats.length > 0 && (
+              <dl className="cxp-stats">
+                {stats.slice(0, 4).map((s) => (
+                  <div key={s.label}>
+                    <dt>{s.label}{s.note && <small>{s.note}</small>}</dt>
+                    <dd className="num">{s.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        </div>
+      </section>
+
       {data.sections.length > 2 && (
-        <nav className="cx-tabs" aria-label={`${c.name} sections`}>
+        <nav className="cx-tabs cxp-tabs" aria-label={`${c.name} sections`}>
           <div className="bx-wrap">
-            <ul>{data.sections.map((s) => <li key={s.key}><a href={`#${s.key === "gallery" ? "gallery-section" : s.key}`}>{s.label}</a></li>)}</ul>
+            <ul>{data.sections.map((s) => <li key={s.key}><a href={`#${anchor(s.key)}`} aria-current={active === s.key ? "true" : undefined}>{s.label}</a></li>)}</ul>
           </div>
         </nav>
       )}
@@ -465,9 +584,12 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       {data.sections.map((s) => <div key={s.key}>{sections[s.key]()}</div>)}
 
       {data.related.length > 0 && (
-        <section className="cx-related" aria-labelledby="cx-related-title">
+        <section className="cx-related cxp-related" aria-labelledby="cx-related-title">
           <div className="bx-wrap">
-            <h2 id="cx-related-title">More in {(c.sector?.name ?? "Sanjeevani Group").toLowerCase()}</h2>
+            <div className="cxp-head-row">
+              <SectionHead id="cx-related" eyebrow="Sanjeevani Group" label={`More in ${(c.sector?.name ?? "Sanjeevani Group").toLowerCase()}`} />
+              {c.sector && <Link className="cxp-more" href={`/businesses?group=${c.sector.slug}`}>View all <Icon name="arrow" /></Link>}
+            </div>
             <ul className="cx-related-list">
               {data.related.map((item) => (
                 <li key={item.slug}>
