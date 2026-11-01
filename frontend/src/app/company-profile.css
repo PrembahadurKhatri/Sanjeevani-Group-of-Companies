@@ -166,7 +166,6 @@
    service tiles, careers band and split contact area.
    ===================================================================== */
 .cxp-eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--bx-accent-text); font: 700 0.75rem/1.2 var(--bx-body); letter-spacing: 0.16em; text-transform: uppercase; }
-.cxp-eyebrow::before { width: 28px; height: 2px; flex: none; border-radius: 2px; background: currentColor; content: ""; }
 .cxp-head { max-width: 780px; margin-bottom: var(--space-xl); display: grid; gap: var(--space-sm); }
 .cxp-head.is-center { margin-inline: auto; justify-items: center; text-align: center; }
 .cxp-head h2 { color: var(--bx-ink-2); font-size: var(--text-section); font-weight: 600; line-height: 1.08; letter-spacing: -0.025em; }
@@ -325,7 +324,13 @@
 .cxp-offices li { display: grid; gap: 2px; font-size: var(--text-sm); }
 .cxp-offices a { color: #c4e58a; }
 .cxp-contact-actions { position: relative; z-index: 1; margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm) var(--space-md); }
-.cxp-social { color: #eef6e6; font-size: var(--text-sm); font-weight: 600; text-decoration: underline; text-decoration-color: rgb(255 255 255 / 0.35); text-underline-offset: 3px; }
+.cxp-map { position: relative; z-index: 1; overflow: hidden; aspect-ratio: 16 / 10; min-height: 220px; border: 1px solid rgb(255 255 255 / 0.16); border-radius: 18px; background: rgb(255 255 255 / 0.06); }
+.cxp-map iframe { width: 100%; height: 100%; display: block; border: 0; }
+.cxp-socials { margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; list-style: none; }
+.cxp-socials a { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / 0.18); border-radius: 50%; background: rgb(255 255 255 / 0.08); color: #fff; transition: background-color var(--dur-short), color var(--dur-short), transform var(--dur-micro) var(--ease-out); }
+.cxp-socials a:hover { background: #c4e58a; color: #153412; transform: translateY(-2px); }
+.cxp-socials svg { width: 18px; height: 18px; fill: currentColor; }
+.cxp-follow { color: rgb(238 246 230 / 0.66); font-size: 0.8125rem; }
 .cxp-form { max-width: none; border-radius: 26px; box-shadow: 0 30px 60px -48px color-mix(in oklab, var(--bx-shade) 60%, transparent); }
 .cxp-form-intro { margin-top: -8px !important; color: var(--bx-muted); font-size: var(--text-sm); }
 

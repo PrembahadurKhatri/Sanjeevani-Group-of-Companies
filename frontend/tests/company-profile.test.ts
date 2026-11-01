@@ -52,10 +52,13 @@ describe("company profile validation", () => {
     assert.equal(profileSectionsSchema.safeParse([{ key: "news", enabled: false }, { key: "news", enabled: true }]).success, false);
     assert.equal(profileSectionsSchema.safeParse([{ key: "settings", enabled: true }]).success, false);
   });
-  it("only allows Google Maps links for directions", () => {
-    assert.equal(companyUpdateSchema.safeParse({ mapUrl: "https://maps.app.goo.gl/abc123" }).success, true);
-    assert.equal(companyUpdateSchema.safeParse({ mapUrl: "https://www.google.com/maps/place/Pokhara" }).success, true);
-    assert.equal(companyUpdateSchema.safeParse({ mapUrl: "https://evil.example/maps" }).success, false);
+  it("only embeds Google Maps, from a link or pasted embed code", () => {
+    const embed = "https://www.google.com/maps/embed?pb=!1m18!1m12";
+    assert.equal(companyUpdateSchema.parse({ mapUrl: embed }).mapUrl, embed);
+    assert.equal(companyUpdateSchema.parse({ mapUrl: `<iframe src="${embed}" width="600" height="450"></iframe>` }).mapUrl, embed);
+    assert.equal(companyUpdateSchema.safeParse({ mapUrl: "https://maps.google.com/maps?q=Pokhara&output=embed" }).success, true);
+    assert.equal(companyUpdateSchema.safeParse({ mapUrl: "https://maps.app.goo.gl/abc123" }).success, false, "share links cannot be framed");
+    assert.equal(companyUpdateSchema.safeParse({ mapUrl: '<iframe src="https://evil.example/maps/embed?x"></iframe>' }).success, false);
     assert.equal(companyUpdateSchema.safeParse({ mapUrl: "javascript:alert(1)" }).success, false);
   });
   it("keeps the company out of a record's body", () => {

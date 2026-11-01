@@ -44,13 +44,15 @@ const httpsUrl = z.string().trim().url("Enter a full link starting with https://
 
 export const keyFactsSchema = z.array(z.object({ label: z.string().trim().min(1).max(60), value: z.string().trim().min(1).max(120) })).max(12);
 
-// A Google Maps link or embed address; other sites are refused so the page
-// never frames arbitrary content.
+// The company's map: a Google Maps embed address. The whole <iframe> code
+// from Google Maps (Share → Embed a map) may be pasted; only its src is kept.
+// Other sites are refused, so the page never frames arbitrary content.
+export const MAP_EMBED_PATTERN = /^https:\/\/(www\.google\.[a-z.]+\/maps\/embed\?|(www\.)?google\.[a-z.]+\/maps\?[^"]*output=embed|maps\.google\.[a-z.]+\/maps\?[^"]*output=embed)/i;
 const mapUrl = z
   .string()
-  .trim()
-  .max(2000)
-  .refine((v) => v === "" || /^https:\/\/(www\.)?(google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(v), "Use a Google Maps link (https://maps.google.com/… or https://www.google.com/maps/…).")
+  .max(5000)
+  .transform((v) => (/<iframe/i.test(v) ? (/src=["']([^"']+)["']/i.exec(v)?.[1] ?? "") : v).trim().replace(/&amp;/g, "&"))
+  .refine((v) => v === "" || MAP_EMBED_PATTERN.test(v), "In Google Maps choose Share → Embed a map, copy the HTML and paste it here.")
   .transform((v) => v || null)
   .nullable()
   .optional();

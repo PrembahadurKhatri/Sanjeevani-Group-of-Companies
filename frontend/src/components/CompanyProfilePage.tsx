@@ -28,6 +28,22 @@ const initials = (name: string) => name.split(/\s+/).map((w) => w[0]).slice(0, 2
 const host = (url: string) => url.replace(/^https?:\/\//, "").replace(/\/$/, "");
 const anchor = (key: SectionKey) => (key === "gallery" ? "gallery-section" : key);
 
+// Shown until a company adds its own map or social accounts in the admin.
+const GROUP_MAP = "https://maps.google.com/maps?q=Sanjeevani%20Group%20Nepal&output=embed";
+const GROUP_SOCIAL = [
+  { label: "Facebook", href: "https://www.facebook.com/" },
+  { label: "X", href: "https://x.com/" },
+  { label: "YouTube", href: "https://www.youtube.com/" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/" },
+];
+const SOCIAL_ICONS: Record<string, ReactNode> = {
+  Facebook: <path d="M13.5 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.3V13h2.8v8h3.4Z" />,
+  X: <path d="M18.9 3h2.9l-6.4 7.3L23 21h-6l-4.7-6.2L6.9 21H4l6.8-7.8L3.3 3h6.2l4.2 5.7L18.9 3Zm-1 16h1.6L8.4 4.9H6.7L17.9 19Z" />,
+  YouTube: <path d="M23.2 7a3 3 0 0 0-2.1-2.1C19.2 4.4 12 4.4 12 4.4s-7.2 0-9.1.5A3 3 0 0 0 .8 7 31 31 0 0 0 .3 12a31 31 0 0 0 .5 5 3 3 0 0 0 2.1 2.1c1.9.5 9.1.5 9.1.5s7.2 0 9.1-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-5 31 31 0 0 0-.5-5ZM9.7 15.5v-7l6 3.5-6 3.5Z" />,
+  LinkedIn: <path d="M5.2 7.6a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM3.4 9h3.6v11H3.4V9Zm5.8 0h3.4v1.5h.1a3.7 3.7 0 0 1 3.3-1.8c3.5 0 4.1 2.3 4.1 5.2V20h-3.6v-5.4c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9V20H9.2V9Z" />,
+  Instagram: <path d="M12 7.3a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4Zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6Zm6-7.9a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0ZM21 8.2c-.1-1.5-.4-2.8-1.5-3.8-1-1-2.4-1.4-3.8-1.5-1.5-.1-6-.1-7.5 0-1.5.1-2.8.4-3.8 1.5-1 1-1.4 2.3-1.5 3.8-.1 1.5-.1 6 0 7.5.1 1.5.4 2.8 1.5 3.8 1 1 2.3 1.4 3.8 1.5 1.5.1 6 .1 7.5 0 1.5-.1 2.8-.4 3.8-1.5 1-1 1.4-2.3 1.5-3.8.1-1.5.1-6 0-7.5Zm-2 9.1a3 3 0 0 1-1.7 1.7c-1.2.5-4 .4-5.3.4s-4.1.1-5.3-.4A3 3 0 0 1 5 17.3c-.5-1.2-.4-4-.4-5.3s-.1-4.1.4-5.3A3 3 0 0 1 6.7 5c1.2-.5 4-.4 5.3-.4s4.1-.1 5.3.4A3 3 0 0 1 19 6.7c.5 1.2.4 4 .4 5.3s.1 4.1-.4 5.3Z" />,
+};
+
 // Line icons drawn on a 24px grid, inheriting the text colour.
 const ICONS = {
   calendar: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>,
@@ -481,9 +497,20 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
                   </ul>
                 </div>
               )}
+              <div className="cxp-map">
+                <iframe src={c.mapUrl ?? GROUP_MAP} title={`Map: ${c.mapUrl ? c.name : "Sanjeevani Group"}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen />
+              </div>
               <div className="cxp-contact-actions">
-                <a className="cxp-button is-light" href={c.mapUrl ?? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${c.name}, ${address}`)}`} target="_blank" rel="noopener noreferrer"><Icon name="pin" />Get directions</a>
-                {c.social.map((s) => <a className="cxp-social" key={s.label} href={s.href} target="_blank" rel="noopener noreferrer">{s.label}</a>)}
+                <span className="cxp-follow">Follow us</span>
+                <ul className="cxp-socials">
+                  {(c.social.length ? c.social : GROUP_SOCIAL).map((s) => (
+                    <li key={s.label}>
+                      <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={`${c.social.length ? c.name : "Sanjeevani Group"} on ${s.label}`}>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{SOCIAL_ICONS[s.label]}</svg>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <span className="cxp-glance-mark" aria-hidden="true"><GroupEmblem /></span>
             </aside>
