@@ -26,7 +26,7 @@ import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomListing, Paged
 import type { CompanyOfferingData, CompanyProfileData } from "@/server/public/company-profile";
 import type { ArticleData, NewsroomData } from "@/server/public/newsroom";
 import type { CommunityData } from "@/server/public/community";
-import { companyNotices, galleryPhotos, galleryVideos, getYouTubeId, latestEvents, latestPressReleases, youtubeVideos } from "@/data/newsroom";
+import { companyNotices, galleryPhotos, galleryVideos, getYouTubeId, latestEvents, latestNews, latestPressReleases, youtubeVideos } from "@/data/newsroom";
 import SocialLinks from "@/components/SocialLinks";
 import NepalNetworkMap from "@/components/NepalNetworkMap";
 import { faqs } from "@/data/faqs";
@@ -438,7 +438,7 @@ const coreValues = [
 // Newsroom / Gallery content (published in the admin, or the bundled samples
 // until something is published); passed in by the server page.
 const BUNDLED_NEWSROOM: NewsroomData = {
-  pressReleases: latestPressReleases, news: [], events: latestEvents, notices: companyNotices,
+  pressReleases: latestPressReleases, news: latestNews, events: latestEvents, notices: companyNotices,
   youtube: youtubeVideos, photos: galleryPhotos, galleryVideos,
 };
 
@@ -473,6 +473,9 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
   const [careerType, setCareerType] = useState("All areas");
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [valuesTab, setValuesTab] = useState<"core" | "mudra">("core");
+  // Newsroom: YouTube videos and notices, 6 at a time.
+  const [shownVideos, setShownVideos] = useState(NEWSROOM_PAGE);
+  const [shownNotices, setShownNotices] = useState(NEWSROOM_PAGE);
 
   useEffect(() => {
     if (!leadershipLayout && !storyLayout) return;
@@ -870,7 +873,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                   <span>{nr.notices.length} {nr.notices.length === 1 ? "notice" : "notices"}</span>
                 </div>
                 <ul className="newsroom-notices">
-                  {nr.notices.map((notice, index) => {
+                  {nr.notices.slice(0, shownNotices).map((notice, index) => {
                     const logo = getBusinessLogo(notice.company);
                     return (
                       <li className="newsroom-notice" key={`${notice.company}-${notice.title}`}>
@@ -892,6 +895,11 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                     );
                   })}
                 </ul>
+                {nr.notices.length > shownNotices && (
+                  <button type="button" className="nr-load-more" onClick={() => setShownNotices((n) => n + NEWSROOM_PAGE)}>
+                    Show more notices <span className="num">({nr.notices.length - shownNotices} more)</span>
+                  </button>
+                )}
               </section>
 
               <section className="newsroom-group" id="youtube" aria-labelledby="youtube-title">
@@ -901,7 +909,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                 </div>
                 {nr.youtube.length > 0 ? (
                   <div className="newsroom-videos">
-                    {nr.youtube.map((video, index) => {
+                    {nr.youtube.slice(0, shownVideos).map((video, index) => {
                       const id = getYouTubeId(video.url);
                       if (!id) return null;
                       return (
@@ -913,6 +921,11 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                   </div>
                 ) : (
                   <p className="newsroom-empty">Videos from across the group will appear here soon.</p>
+                )}
+                {nr.youtube.length > shownVideos && (
+                  <button type="button" className="nr-load-more" onClick={() => setShownVideos((n) => n + NEWSROOM_PAGE)}>
+                    Show more videos <span className="num">({nr.youtube.length - shownVideos} more)</span>
+                  </button>
                 )}
               </section>
 

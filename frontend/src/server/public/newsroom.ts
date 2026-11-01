@@ -1,7 +1,7 @@
 import { prisma, isDatabaseConfigured } from "@/server/db";
 import { formatKathmandu } from "@/server/time";
 import {
-  companyNotices, galleryPhotos, galleryVideos, latestEvents, latestPressReleases, youtubeVideos,
+  companyNotices, galleryPhotos, galleryVideos, latestEvents, latestNews, latestPressReleases, youtubeVideos,
   type CompanyNotice, type GalleryPhoto, type GalleryVideo, type NewsroomStory,
 } from "@/data/newsroom";
 
@@ -30,7 +30,7 @@ export type NewsKind = keyof typeof NEWS_KINDS;
 
 const BUNDLED: NewsroomData = {
   pressReleases: latestPressReleases,
-  news: [],
+  news: latestNews,
   events: latestEvents,
   notices: companyNotices,
   youtube: youtubeVideos,
