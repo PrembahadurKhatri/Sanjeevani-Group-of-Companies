@@ -307,6 +307,10 @@
 .cxp-leader-org { color: var(--bx-accent-text); font: 700 0.75rem/1.3 var(--bx-body); letter-spacing: 0.14em; text-transform: uppercase; }
 .cxp-leader-info h3 { color: var(--bx-ink-2); font-size: clamp(1.375rem, 1.2vw + 0.9rem, 1.875rem); font-weight: 600; line-height: 1.15; }
 .cxp-leader-text { color: var(--bx-muted); line-height: 1.65; }
+.cxp-leader-message { position: relative; margin: 4px 0 0; padding-left: 18px; border-left: 3px solid var(--bx-accent-soft); display: grid; gap: 10px; }
+.cxp-leader-message p { color: var(--bx-ink); font-size: var(--text-md); font-style: italic; line-height: 1.7; }
+.cxp-readmore { padding: 0; border: 0; background: none; cursor: pointer; }
+.cxp-readmore[aria-expanded="true"] .cxp-icon { transform: rotate(-90deg); }
 .cxp-leader.is-pending .cxp-leader-photo img { filter: grayscale(0.2); }
 .cxp-leader.is-pending h3 { color: var(--bx-muted); }
 .cxp-leader-links { margin-top: var(--space-sm); display: flex; flex-wrap: wrap; gap: var(--space-md); }

@@ -110,8 +110,13 @@ function LeaderCard({ person }: { person: ProfileLeader }) {
 }
 
 // A leader on the company page: portrait on a green panel, then name, role
-// and a short line, with a link to the full profile when there is one.
-function LeaderFeature({ photo, name, role, org, text, href, linkedin, pending }: { photo: string; name: string; role: string; org: string; text: string; href?: string; linkedin?: string; pending?: boolean }) {
+// and their message. A long message opens with Read more.
+const SHORT_MESSAGE = 260;
+function LeaderFeature({ photo, name, role, org, message, fallback, linkedin, pending }: { photo: string; name: string; role: string; org: string; message: string[]; fallback: string; linkedin?: string; pending?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const text = message.join(" ");
+  const long = text.length > SHORT_MESSAGE;
+  const preview = long ? `${text.slice(0, text.lastIndexOf(" ", SHORT_MESSAGE)).replace(/[,.;:]$/, "")}…` : text;
   return (
     <article className={`cxp-leader${pending ? " is-pending" : ""}`}>
       <div className="cxp-leader-visual">
@@ -122,10 +127,14 @@ function LeaderFeature({ photo, name, role, org, text, href, linkedin, pending }
       <div className="cxp-leader-info">
         <p className="cxp-leader-org">{org}</p>
         <h3>{name}</h3>
-        <p className="cxp-leader-text">{text}</p>
-        {(href || linkedin) && (
+        {message.length ? (
+          <blockquote className="cxp-leader-message">
+            {open ? message.map((p) => <p key={p}>{p}</p>) : <p>{preview}</p>}
+          </blockquote>
+        ) : <p className="cxp-leader-text">{fallback}</p>}
+        {(long || linkedin) && (
           <div className="cxp-leader-links">
-            {href && <Link className="cxp-more" href={href}>View profile <Icon name="arrow" /></Link>}
+            {long && <button type="button" className="cxp-more cxp-readmore" aria-expanded={open} onClick={() => setOpen(!open)}>{open ? "Show less" : "Read more"} <Icon name="arrow" /></button>}
             {linkedin && <a className="cxp-more is-quiet" href={linkedin} target="_blank" rel="noopener noreferrer">LinkedIn <Icon name="arrow" /></a>}
           </div>
         )}
@@ -354,15 +363,16 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
               name={data.chairman?.name ?? "C.A. Khuma Parsad Aryal"}
               role="Chairman"
               org="Sanjeevani Group"
-              text={`Leads Sanjeevani Group, the family of businesses that ${c.name} belongs to.`}
-              href="/chairman"
+              message={data.chairman?.message ?? []}
+              fallback={`Leads Sanjeevani Group, the family of businesses that ${c.name} belongs to.`}
             />
             <LeaderFeature
               photo={mdPhoto}
               name={md?.name ?? "To be announced"}
               role="Managing Director"
               org={c.name}
-              text={md?.summary ?? (md ? `Leads ${c.shortName ?? c.name} day to day.` : `The Managing Director of ${c.shortName ?? c.name} will be introduced here soon.`)}
+              message={md?.message ?? []}
+              fallback={md?.summary ?? (md ? `Leads ${c.shortName ?? c.name} day to day.` : `The Managing Director of ${c.shortName ?? c.name} will be introduced here soon.`)}
               linkedin={md?.linkedin ?? undefined}
               pending={!md}
             />

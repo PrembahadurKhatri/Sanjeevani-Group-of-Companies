@@ -319,34 +319,6 @@ const LOCATION_FIELDS: Field[] = [
   },
 ];
 
-// The people shown in the Leadership section of this company's page. They are
-// managed under Leadership, where one person can hold roles in several companies.
-function CompanyLeaders({ me, companyId }: { me: Me; companyId: string }) {
-  const [rows, setRows] = useState<{ id: string; name: string; status: string; title: string; md: boolean }[] | null>(null);
-  useEffect(() => {
-    if (!hasPermission(me, "leader.update")) { setRows([]); return; }
-    api<{ items: { id: string; name: string; status: string; assignments: { companyId: string | null; title: string; isManagingDirector: boolean }[] }[] }>("/api/admin/content/leaders")
-      .then((r) => setRows(r.items.flatMap((l) => l.assignments.filter((a) => a.companyId === companyId).map((a) => ({ id: l.id, name: l.name, status: l.status, title: a.title, md: a.isManagingDirector })))))
-      .catch(() => setRows([]));
-  }, [me, companyId]);
-  const hasMd = rows?.some((r) => r.md);
-  return (
-    <div className="adm-company-leaders adm-field-wide">
-      <div className="adm-form-section"><h4>Leadership on this page</h4><p className="adm-muted">The Chairman is shown on every company page. Add the Managing Director and other leaders under Leadership, choosing this company in their role.</p></div>
-      {rows === null ? <p className="adm-muted">Loading…</p> : rows.length === 0 ? (
-        <p className="admin-message admin-error">No Managing Director yet. Until one is added, the page shows &ldquo;To be announced&rdquo; with the Chairman&rsquo;s photo.</p>
-      ) : (
-        <ul className="adm-plain-cards">
-          {rows.map((r) => (
-            <li key={r.id + r.title}><strong>{r.name}</strong><span>{r.title}{r.md ? ", Managing Director" : ""}</span><span className={`admin-badge admin-badge-${r.status.toLowerCase()}`}>{label(r.status)}</span></li>
-          ))}
-        </ul>
-      )}
-      {rows && rows.length > 0 && !hasMd && <p className="adm-muted">None of these is ticked as Managing Director, so the page still shows &ldquo;To be announced&rdquo;.</p>}
-    </div>
-  );
-}
-
 export function BusinessesPanel({ me }: { me: Me }) {
   const { lookups, companies, sectors, reload, loading, loadError } = useLookups(me);
   const [editing, setEditing] = useState<{ id: string | null; updatedAt?: string; values: Record<string, unknown>; locations: Record<string, unknown>; sections: unknown } | null>(null);
@@ -484,7 +456,23 @@ export function BusinessesPanel({ me }: { me: Me }) {
             {needsSave && <p className="adm-tab-note">Save the company first. Then you can add its {COMPANY_TABS.find(([k]) => k === formTab)?.[1].toLowerCase()} here.</p>}
             {id && formTab === "about" && <ItemsManager me={me} companyId={id} kind="achievements" noun="milestone" lookups={lookups} fields={ACHIEVEMENT_FIELDS.filter((f) => f.k !== "kind")} defaults={{ kind: "MILESTONE" }} filter={(i) => i.kind === "MILESTONE"} intro="Milestones appear as a timeline in About us." describe={(i) => ({ title: String(i.title), meta: i.date ? formatDate(String(i.date), false) : undefined })} />}
             {id && formTab === "services" && <ItemsManager me={me} companyId={id} kind="offerings" noun="item" lookups={lookups} fields={OFFERING_FIELDS} intro="Each service, product or solution, with its own image and optional detail page." describe={(i) => ({ title: String(i.title), meta: i.body ? "Has a detail page" : undefined })} />}
-            {id && formTab === "leadership" && <><CompanyLeaders me={me} companyId={id} /><p className="adm-muted">Add or edit people under <a className="admin-link-button" href="/admin?tab=leadership">Leadership</a>, choosing this company in their role and Board of directors, Executive leadership or Management team.</p></>}
+            {id && formTab === "leadership" && (
+              hasPermission(me, "leader.update") ? (
+                <div className="adm-gallery-managers">
+                  <section className="adm-card">
+                    <ContentManager key={`leaders-${id}`} me={me} lookups={lookups} config={{
+                      ...LEADER, noun: "leader", heading: "This company's leaders",
+                      filter: (i) => ((i.assignments as { companyId: string | null }[]) ?? []).some((a) => a.companyId === id),
+                      defaults: { assignments: [{ companyId: id, title: "Managing Director", tier: "EXECUTIVE", isManagingDirector: true }] },
+                    }} />
+                    <p className="adm-muted">Name, photo and message appear on the company page. Tick &ldquo;Managing Director of this company&rdquo; in a person&rsquo;s role to show them in the Managing Director card; until then it shows &ldquo;To be announced&rdquo; with the Chairman&rsquo;s photo. Save and publish to put changes on the website.</p>
+                  </section>
+                  <section className="adm-card">
+                    <ContentManager key={`chairman-${id}`} me={me} lookups={lookups} config={{ ...LEADER, noun: "Chairman", heading: "Chairman (shown on every company page)", filter: (i) => i.isChairman === true }} />
+                  </section>
+                </div>
+              ) : <p className="adm-muted">Leaders are managed by people with leadership rights.</p>
+            )}
             {id && formTab === "businesses" && <ItemsManager me={me} companyId={id} kind="relations" noun="business" lookups={{ ...lookups, companies: lookups.companies.filter(([cid]) => cid !== id) }} fields={RELATION_FIELDS} intro="Subsidiaries, brands, divisions or associated businesses." describe={(i) => ({ title: String((i.relatedCompany as { name?: string } | null)?.name ?? i.name ?? ""), meta: label(String(i.relationType)) })} />}
             {id && formTab === "projects" && <ItemsManager me={me} companyId={id} kind="achievements" noun="entry" lookups={lookups} fields={ACHIEVEMENT_FIELDS} defaults={{ kind: "PROJECT" }} filter={(i) => i.kind !== "MILESTONE"} intro="Projects, awards, certifications and achievements. Milestones are under About us." describe={(i) => ({ title: String(i.title), meta: `${label(String(i.kind))}${i.date ? `, ${formatDate(String(i.date), false)}` : ""}` })} />}
             {id && formTab === "news" && <CompanyNews me={me} companyId={id} />}

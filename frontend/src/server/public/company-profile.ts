@@ -15,7 +15,7 @@ import { formatKathmandu } from "@/server/time";
 type Img = { url: string; alt: string } | null;
 const img = (m: { url: string; altText: string | null } | null | undefined, alt = ""): Img => (m ? { url: m.url, alt: m.altText ?? alt } : null);
 
-export type ProfileLeader = { key: string; name: string; title: string; photo: Img; summary: string | null; biography: string | null; linkedin: string | null; career: { period: string; position: string; organisation: string }[]; managingDirector: boolean };
+export type ProfileLeader = { key: string; name: string; title: string; photo: Img; summary: string | null; biography: string | null; message: string[]; linkedin: string | null; career: { period: string; position: string; organisation: string }[]; managingDirector: boolean };
 
 export type CompanyProfileData = {
   preview: boolean;
@@ -38,7 +38,7 @@ export type CompanyProfileData = {
   achievements: { id: string; kind: string; title: string; description: string | null; date: string | null; image: Img }[];
   milestones: { id: string; title: string; description: string | null; date: string | null }[];
   relations: { id: string; name: string; description: string | null; type: string; logo: Img; href: string | null; external: boolean }[];
-  chairman: { name: string; photo: Img } | null;
+  chairman: { name: string; photo: Img; message: string[] } | null;
   leaders: { tier: "BOARD" | "EXECUTIVE" | "TEAM"; people: ProfileLeader[] }[];
   hasManagingDirector: boolean;
   news: { id: string; title: string; excerpt: string | null; cover: Img; date: string; href: string }[];
@@ -122,6 +122,7 @@ export async function loadCompanyProfile(slug: string, options: { preview?: bool
     summary: a.leader.summary,
     biography: a.leader.biography,
     linkedin: a.leader.linkedinUrl,
+    message: a.leader.message,
     career: a.leader.career.map((c) => ({ period: c.period, position: c.position, organisation: c.organisation })),
     managingDirector: a.isManagingDirector,
   }));
@@ -189,7 +190,7 @@ export async function loadCompanyProfile(slug: string, options: { preview?: bool
         external: !own && Boolean(website),
       }];
     }),
-    chairman: chairman ? { name: chairman.name, photo: img(chairman.photo, chairman.name) } : null,
+    chairman: chairman ? { name: chairman.name, photo: img(chairman.photo, chairman.name), message: chairman.message } : null,
     leaders,
     hasManagingDirector: people.some((p) => p.managingDirector),
     news: company.newsArticles.map((n) => ({
