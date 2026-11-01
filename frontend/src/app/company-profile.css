@@ -432,3 +432,24 @@
   .cxp-reveal { opacity: 1; transform: none; transition: none; }
   .cxp-explore a, .cxp-tiles li, .cxp-tiles li::before, .cxp-offering, .cxp-offering-media img, .cxp-leader, .cxp-leader-photo img, .cxp-branch, .cxp-branch-photo img { transition: none; }
 }
+
+
+/* ---------- Newsroom section bar on the patterned band (same pattern as the Mission page statement) ---------- */
+.nr-jump-band { margin: 0 calc(50% - 50vw) 64px; padding: 44px 20px 48px; display: grid; justify-items: center; gap: 18px; background-color: #f6f7f8; background-image: linear-gradient(45deg, #ffffff99 25%, transparent 25%, transparent 75%, #ffffff99 75%), linear-gradient(-45deg, #e9ebee80 25%, transparent 25%, transparent 75%, #e9ebee80 75%), linear-gradient(180deg, #fafbfc, #f1f2f4); background-size: 220px 220px, 220px 220px, 100% 100%; border-block: 1px solid #e6eae2; }
+.nr-jump-kicker { margin: 0; color: #3a7020; font: 700 12px/1 var(--font-body); letter-spacing: 0.18em; text-transform: uppercase; }
+.newsroom .nr-jump { max-width: min(100%, 1180px); margin: 0; padding: 7px; display: flex; flex-wrap: nowrap; gap: 4px; overflow-x: auto; border: 1px solid #dfe6d8; border-radius: 999px; background: #ffffffe6; box-shadow: 0 26px 54px -36px #0b1b1080, 0 2px 8px -6px #0b1b1033; backdrop-filter: blur(6px); scrollbar-width: none; }
+.newsroom .nr-jump::-webkit-scrollbar { display: none; }
+.newsroom .nr-jump a { min-height: 48px; padding: 0 22px; display: inline-flex; align-items: center; gap: 9px; border: 0; border-radius: 999px; background: transparent; color: #2d4731; font: 600 15px/1 var(--font-body); white-space: nowrap; text-decoration: none; transition: background-color .2s, color .2s, box-shadow .2s, transform .2s; }
+.newsroom .nr-jump svg { width: 18px; height: 18px; flex: none; fill: none; stroke: #4f8f2a; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: stroke .2s; }
+.newsroom .nr-jump a:hover, .newsroom .nr-jump a:focus-visible { background: #eef5e4; color: #24521a; }
+.newsroom .nr-jump a[aria-current="page"] { background: linear-gradient(135deg, #2f5c1a, #3a7020); color: #fff; box-shadow: 0 10px 22px -12px #24521acc; }
+.newsroom .nr-jump a[aria-current="page"] svg { stroke: #c4e58a; }
+:root[data-theme="dark"] .nr-jump-band { background-color: var(--bg-soft); background-image: none; border-color: #2a3428; }
+:root[data-theme="dark"] .newsroom .nr-jump { border-color: #2a3428; background: #141a13e6; }
+:root[data-theme="dark"] .newsroom .nr-jump a { color: #e6eee0; }
+:root[data-theme="dark"] .newsroom .nr-jump a:hover { background: #1f2a17; color: #c4e58a; }
+@media (max-width: 780px) {
+  .nr-jump-band { margin-bottom: 44px; padding: 30px 16px 32px; justify-items: stretch; }
+  .nr-jump-kicker { text-align: center; }
+  .newsroom .nr-jump a { min-height: 42px; padding: 0 16px; font-size: 14px; }
+}

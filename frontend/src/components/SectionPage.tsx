@@ -22,7 +22,7 @@ import AboutNavMenu from "@/components/AboutNavMenu";
 import CareersNavMenu from "@/components/CareersNavMenu";
 import NewsroomNavMenu from "@/components/NewsroomNavMenu";
 import CompanyProfilePage from "@/components/CompanyProfilePage";
-import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomListing, PagedCards } from "@/components/NewsroomPages";
+import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomJump, NewsroomListing, PagedCards } from "@/components/NewsroomPages";
 import type { CompanyOfferingData, CompanyProfileData } from "@/server/public/company-profile";
 import type { ArticleData, NewsroomData } from "@/server/public/newsroom";
 import type { CommunityData } from "@/server/public/community";
@@ -844,14 +844,14 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
         ) : section === "newsroom" ? (
           <section className="newsroom">
             <div className="reference-wrap">
-              <nav className="newsroom-jump" aria-label="Newsroom sections">
-                {nr.news.length > 0 && <a href="#news">News</a>}
-                <a href="#press-releases">Press releases</a>
-                <a href="#events">Events</a>
-                <a href="#notices">Notices</a>
-                <a href="#youtube">YouTube</a>
-                <a href="#gallery">Gallery</a>
-              </nav>
+              <NewsroomJump items={[
+                ...(nr.news.length > 0 ? [{ key: "news", label: "News", href: "#news" }] : []),
+                { key: "press-releases", label: "Press releases", href: "#press-releases" },
+                { key: "events", label: "Events", href: "#events" },
+                { key: "notices", label: "Notices", href: "#notices" },
+                { key: "youtube", label: "YouTube", href: "#youtube" },
+                { key: "gallery", label: "Gallery", href: "#gallery" },
+              ]} />
 
               {[
                 ...(nr.news.length ? [{ id: "news", label: "News", stories: nr.news }] : []),
