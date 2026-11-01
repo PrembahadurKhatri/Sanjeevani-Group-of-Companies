@@ -62,6 +62,12 @@ const ICONS = {
   news: <><path d="M4 5h13v14a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2V5Z" /><path d="M17 9h3v10a2 2 0 0 1-2 2M8 9h5M8 13h5M8 17h3" /></>,
   award: <><circle cx="12" cy="9" r="6" /><path d="m8.5 14-1.5 7 5-2.5 5 2.5-1.5-7" /></>,
 } as const;
+// One icon per section in the section bar.
+const SECTION_ICONS: Record<SectionKey, keyof typeof ICONS> = {
+  overview: "building", about: "eye", services: "spark", leadership: "users", branches: "pin", businesses: "briefcase",
+  projects: "award", news: "news", careers: "briefcase", gallery: "globe", contact: "phone",
+};
+
 // Icons cycled across the simple services list.
 const TILE_ICONS: (keyof typeof ICONS)[] = ["spark", "award", "target", "users", "briefcase", "globe"];
 function Icon({ name }: { name: keyof typeof ICONS }) {
@@ -670,7 +676,16 @@ export default function CompanyProfilePage({ data }: { data: CompanyProfileData 
       {data.sections.length > 2 && (
         <nav className="cx-tabs cxp-tabs" aria-label={`${c.name} sections`}>
           <div className="bx-wrap">
-            <ul>{data.sections.map((s) => <li key={s.key}><a href={`#${anchor(s.key)}`} aria-current={active === s.key ? "true" : undefined}>{s.label}</a></li>)}</ul>
+            <ul className="cxp-tabbar">
+              {data.sections.map((s) => (
+                <li key={s.key}>
+                  <a href={`#${anchor(s.key)}`} aria-current={active === s.key ? "true" : undefined}>
+                    <Icon name={SECTION_ICONS[s.key]} />
+                    <span>{s.label}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </nav>
       )}

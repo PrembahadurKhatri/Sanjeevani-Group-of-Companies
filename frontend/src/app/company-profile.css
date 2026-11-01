@@ -207,11 +207,20 @@
 .cxp-stats dt small { margin-top: 2px; display: block; color: var(--bx-muted); font-weight: 400; }
 
 /* ---------- section bar ---------- */
-.cxp-tabs { margin-top: var(--space-2xl); border-top: 1px solid var(--bx-rule); }
-.cxp-tabs a { position: relative; border-bottom: 0; }
-.cxp-tabs a::after { height: 2px; position: absolute; right: 0; bottom: 0; left: 0; border-radius: 2px; background: var(--bx-accent); content: ""; transform: scaleX(0); transition: transform var(--dur-short) var(--ease-out); }
-.cxp-tabs a:hover::after, .cxp-tabs a[aria-current]::after { transform: scaleX(1); }
-.cxp-tabs a[aria-current] { color: var(--bx-ink-2); }
+.cxp-tabs { margin-top: var(--space-2xl); border: 0; background: none; backdrop-filter: none; }
+.cxp-tabs .bx-wrap { display: flex; justify-content: center; }
+.cxp-tabs .cxp-tabbar { max-width: 100%; padding: 6px; display: flex; gap: 4px; overflow-x: auto; border: 1px solid var(--bx-rule); border-radius: var(--radius-pill); background: color-mix(in oklab, var(--bx-paper) 85%, #fff); box-shadow: 0 24px 50px -36px color-mix(in oklab, var(--bx-shade) 55%, transparent), 0 2px 6px -4px color-mix(in oklab, var(--bx-shade) 25%, transparent); scrollbar-width: none; }
+.cxp-tabs .cxp-tabbar::-webkit-scrollbar { display: none; }
+.cxp-tabs .cxp-tabbar a { min-height: 46px; padding: 0 20px; position: relative; display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: var(--radius-pill); color: var(--bx-muted); font: 600 0.9375rem/1 var(--bx-body); white-space: nowrap; text-decoration: none; transition: background-color var(--dur-short), color var(--dur-short), box-shadow var(--dur-short); }
+.cxp-tabs .cxp-tabbar a::after { display: none; }
+.cxp-tabs .cxp-tabbar .cxp-icon { width: 17px; height: 17px; color: var(--bx-accent-text); transition: color var(--dur-short); }
+.cxp-tabs .cxp-tabbar a:hover { background: var(--bx-paper-3); color: var(--bx-ink-2); }
+.cxp-tabs .cxp-tabbar a[aria-current] { background: linear-gradient(135deg, #2f5c1a, #3a7020); color: #fff; box-shadow: 0 10px 22px -12px rgb(36 82 26 / 0.8); }
+.cxp-tabs .cxp-tabbar a[aria-current] .cxp-icon { color: #c4e58a; }
+@media (max-width: 40rem) {
+  .cxp-tabs .bx-wrap { justify-content: flex-start; }
+  .cxp-tabs .cxp-tabbar a { min-height: 40px; padding: 0 14px; font-size: 0.875rem; }
+}
 
 /* ---------- overview ---------- */
 .cxp-overview-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); align-items: start; gap: var(--space-2xl); }
