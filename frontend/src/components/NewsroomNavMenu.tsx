@@ -6,6 +6,7 @@ const newsroomLinks = [
   { label: "News", href: "/newsroom/news" },
   { label: "Events", href: "/newsroom/events" },
   { label: "Press Releases", href: "/newsroom/press-releases" },
+  { label: "Notices", href: "/newsroom/notices" },
   { label: "Gallery", href: "/gallery" },
 ];
 

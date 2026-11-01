@@ -438,7 +438,7 @@ const coreValues = [
 // Newsroom / Gallery content (published in the admin, or the bundled samples
 // until something is published); passed in by the server page.
 const BUNDLED_NEWSROOM: NewsroomData = {
-  pressReleases: latestPressReleases, news: latestNews, events: latestEvents, notices: companyNotices,
+  noticeStories: [], pressReleases: latestPressReleases, news: latestNews, events: latestEvents, notices: companyNotices,
   youtube: youtubeVideos, photos: galleryPhotos, galleryVideos,
 };
 
@@ -834,7 +834,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
         ) : section === "newsroom" && article && newsKind ? (
           <NewsArticle article={article} kind={newsKind.key} kindTitle={newsKind.title} />
         ) : section === "newsroom" && newsKind ? (
-          <NewsroomListing kind={newsKind.key} title={newsKind.title} stories={newsKind.key === "events" ? nr.events : newsKind.key === "press-releases" ? nr.pressReleases : nr.news} />
+          <NewsroomListing kind={newsKind.key} title={newsKind.title} stories={newsKind.key === "events" ? nr.events : newsKind.key === "press-releases" ? nr.pressReleases : newsKind.key === "notices" ? nr.noticeStories : nr.news} />
         ) : section === "gallery" ? (
           <section className="newsroom nr-gallery-page">
             <div className="reference-wrap">
@@ -884,7 +884,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                             {notice.date}
                           </time>
                         </div>
-                        <h3>{notice.title}</h3>
+                        <h3>{notice.href ? <Link className="newsroom-card-title-link" href={notice.href}>{notice.title}</Link> : notice.title}</h3>
                         <div className="newsroom-notice-company">
                           <span className="newsroom-notice-logo">
                             {logo ? <Image src={logo} alt="" fill sizes="44px" /> : notice.company.split(/\s+/).map((word) => word[0]).slice(0, 2).join("").toUpperCase()}

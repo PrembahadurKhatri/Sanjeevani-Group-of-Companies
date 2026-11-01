@@ -496,6 +496,7 @@ model MediaAsset {
   companyLogos     Company[]              @relation("CompanyLogo")
   companyBanners   Company[]              @relation("CompanyBanner")
   companyShares    Company[]              @relation("CompanyShareImage")
+  storyMedia       StoryMedia[]           @relation("StoryMediaImage")
   communityLogos   CommunityProgram[]     @relation("CommunityProgramLogo")
   communityPhotos  CommunityProgram[]     @relation("CommunityProgramPhoto")
   communityGallery CommunityGalleryItem[] @relation("CommunityGalleryImage")
@@ -795,6 +796,7 @@ model NewsArticle {
   approvedById   String?       @db.Uuid
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  media          StoryMedia[]
 
   @@index([status, publishedAt])
   @@index([type, status])
@@ -822,6 +824,7 @@ model Event {
   approvedById String?       @db.Uuid
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  media        StoryMedia[]
 
   @@index([status, startsAt])
 }
@@ -841,6 +844,7 @@ model Notice {
   updatedById  String?       @db.Uuid
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  media        StoryMedia[]
 
   @@index([status, noticeDate])
 }
@@ -1156,4 +1160,26 @@ model CommunityGalleryItem {
   updatedAt   DateTime      @updatedAt
 
   @@index([status, sortOrder])
+}
+
+// Photos and videos shown in the gallery of a news article, press release,
+// event or notice (exactly one of the three owners is set).
+model StoryMedia {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  newsArticleId String?      @db.Uuid
+  newsArticle   NewsArticle? @relation(fields: [newsArticleId], references: [id], onDelete: Cascade)
+  eventId       String?      @db.Uuid
+  event         Event?       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  noticeId      String?      @db.Uuid
+  notice        Notice?      @relation(fields: [noticeId], references: [id], onDelete: Cascade)
+  mediaId       String?      @db.Uuid
+  media         MediaAsset?  @relation("StoryMediaImage", fields: [mediaId], references: [id], onDelete: SetNull)
+  videoUrl      String? // a YouTube link, instead of a photo
+  caption       String?
+  altText       String?
+  sortOrder     Int          @default(0)
+
+  @@index([newsArticleId, sortOrder])
+  @@index([eventId, sortOrder])
+  @@index([noticeId, sortOrder])
 }

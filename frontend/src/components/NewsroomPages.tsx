@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
+import NewsroomGallery from "@/components/NewsroomGallery";
 import type { Story } from "@/server/public/newsroom";
 import type { ArticleData } from "@/server/public/newsroom";
 import type { CompanyOfferingData } from "@/server/public/company-profile";
@@ -17,7 +18,22 @@ export const NEWSROOM_PAGE = 6;
 const PAGE = NEWSROOM_PAGE;
 
 // "Read full story" for press releases; "Read more" for news and events.
-const readLabel = (href: string) => (href.startsWith("/newsroom/press-releases/") ? "Read full story" : "Read more");
+const readLabel = (href: string) => (href.startsWith("/newsroom/press-releases/") ? "Read full story" : href.startsWith("/newsroom/notices/") ? "View notice" : "Read more");
+
+// Click-to-play YouTube player for story galleries (the video loads only when played).
+function StoryVideo({ id, title, thumbnail }: { id: string; title: string; thumbnail?: string }) {
+  const [playing, setPlaying] = useState(false);
+  if (playing) {
+    return <iframe src={`https://www.youtube-nocookie.com/embed/${id}?autoplay=1`} title={title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />;
+  }
+  return (
+    <button className="newsroom-video-cover" type="button" onClick={() => setPlaying(true)} aria-label={`Play video: ${title}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- remote YouTube thumbnail */}
+      <img src={thumbnail ?? `https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" />
+      <span className="newsroom-video-play" aria-hidden="true">▶</span>
+    </button>
+  );
+}
 
 export function NewsroomCards({ stories }: { stories: Story[] }) {
   return (
@@ -95,6 +111,7 @@ const KIND_LINKS = [
   { key: "news", label: "News", href: "/newsroom/news" },
   { key: "events", label: "Events", href: "/newsroom/events" },
   { key: "press-releases", label: "Press releases", href: "/newsroom/press-releases" },
+  { key: "notices", label: "Notices", href: "/newsroom/notices" },
 ];
 
 export function NewsroomListing({ kind, title, stories }: { kind: string; title: string; stories: Story[] }) {
@@ -202,11 +219,20 @@ export function NewsArticle({ article, kind, kindTitle }: { article: ArticleData
               {(article.blocks as Block[]).map((block, index) => <ArticleBlock key={index} block={block} />)}
             </div>
             {article.tags.length > 0 && <ul className="nr-article-tags">{article.tags.map((t) => <li key={t}>{t}</li>)}</ul>}
+            {(article.photos.length > 0 || article.videos.length > 0) && (
+              <div className="nr-story-gallery">
+                <NewsroomGallery
+                  renderYouTube={(id, title, thumbnail) => <StoryVideo id={id} title={title} thumbnail={thumbnail} />}
+                  photos={article.photos} videos={article.videos} heading="Photos and videos" idPrefix="story-gallery"
+                  photosOnly={article.videos.length === 0} pageSize={NEWSROOM_PAGE}
+                />
+              </div>
+            )}
             <ShareStory title={article.title} />
           </div>
           <aside className="nr-story-side">
             <div className="nr-story-card">
-              <h2>{kind === "events" ? "Event details" : "Story details"}</h2>
+              <h2>{kind === "events" ? "Event details" : kind === "notices" ? "Notice details" : "Story details"}</h2>
               <dl>
                 {facts.map((f) => (
                   <div key={f.label}>

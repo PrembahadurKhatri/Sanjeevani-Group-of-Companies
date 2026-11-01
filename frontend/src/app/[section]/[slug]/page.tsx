@@ -9,7 +9,7 @@ import { isDatabaseConfigured } from "@/server/db";
 import { companyExists, companyMetadata, loadCompanyProfile } from "@/server/public/company-profile";
 import { loadNewsroom, NEWS_KINDS } from "@/server/public/newsroom";
 
-const NEWSROOM_PAGES: Record<string, string> = { news: NEWS_KINDS.news.title, events: "Events", "press-releases": NEWS_KINDS["press-releases"].title };
+const NEWSROOM_PAGES: Record<string, string> = { news: NEWS_KINDS.news.title, events: "Events", "press-releases": NEWS_KINDS["press-releases"].title, notices: "Notices" };
 
 // A company's page from the database. null: use the bundled page (no database,
 // or it could not be reached). "missing": the company exists but is not public.

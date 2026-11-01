@@ -492,3 +492,12 @@
   .nr-story-grid { grid-template-columns: 1fr; gap: 36px; }
   .nr-story-side { position: static; }
 }
+
+
+/* ---------- Gallery under a story ---------- */
+.nr-story-gallery { margin-top: 44px; }
+.nr-story-gallery .nr-gallery { margin: 0; }
+.nr-story-gallery .newsroom-group-heading h2 { font-size: clamp(1.5rem, 1.2vw + 1rem, 2rem); }
+.nr-story-gallery .nr-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nr-story-gallery .nr-videos { grid-template-columns: 1fr; }
+@media (max-width: 640px) { .nr-story-gallery .nr-photos { grid-template-columns: 1fr; } }

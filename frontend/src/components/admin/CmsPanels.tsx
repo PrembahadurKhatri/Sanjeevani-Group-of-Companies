@@ -116,6 +116,19 @@ export function LeadershipPanel({ me }: { me: Me }) {
 
 const companyField: Field = { k: "companyId", label: "Company", type: "select", options: "companies", empty: "Sanjeevani Group (all)" };
 
+// The gallery under a story: as many photos and YouTube videos as needed.
+const storyMediaField: Field = {
+  k: "media", label: "Photos and videos", type: "rows", add: "Add a photo or video",
+  help: "Shown as a gallery on the story's page. For a video, paste a YouTube link instead of choosing a photo.",
+  blank: { mediaId: null, videoUrl: "", caption: "", altText: "" },
+  fields: [
+    { k: "mediaId", label: "Photo", type: "image", rel: "media", folder: "news" },
+    { k: "videoUrl", label: "Or a YouTube link", type: "url" },
+    { k: "caption", label: "Caption", type: "text" },
+    { k: "altText", label: "Description for screen readers", type: "text", help: "What the photo shows." },
+  ],
+};
+
 const NEWSROOM: Record<string, ContentConfig> = {
   news: {
     type: "news", noun: "press release or news", update: "content.update", publish: "content.publish",
@@ -131,6 +144,7 @@ const NEWSROOM: Record<string, ContentConfig> = {
       { k: "body", label: "Full text", type: "blocks", help: "Leave a blank line between paragraphs." },
       { k: "tags", label: "Tags", type: "lines", help: "One per line." },
       { k: "linkUrl", label: "Link (optional)", type: "url", help: "The original article or more information. Shown as a Read more button on the story page." },
+      storyMediaField,
       { k: "publishAt", label: "Publish on (optional)", type: "datetime", help: "Leave empty to publish as soon as you press Save and publish." },
     ],
   },
@@ -148,6 +162,7 @@ const NEWSROOM: Record<string, ContentConfig> = {
       { k: "summary", label: "Summary", type: "textarea" },
       { k: "body", label: "Details", type: "blocks", help: "Leave a blank line between paragraphs." },
       { k: "linkUrl", label: "Link (optional)", type: "url", help: "Registration or more information. Shown as a button on the event page." },
+      storyMediaField,
     ],
   },
   notices: {
@@ -160,6 +175,7 @@ const NEWSROOM: Record<string, ContentConfig> = {
       companyField,
       { k: "body", label: "Notice text", type: "textarea" },
       { k: "attachmentId", label: "Notice image (optional)", type: "image", rel: "attachment", folder: "news" },
+      storyMediaField,
     ],
   },
   videos: {

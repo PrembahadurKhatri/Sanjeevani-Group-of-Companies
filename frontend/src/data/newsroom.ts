@@ -11,6 +11,7 @@ export type CompanyNotice = {
   company: string;
   date: string;
   title: string;
+  href?: string;
 };
 
 // TODO: replace these sample press releases with real ones (newest first).

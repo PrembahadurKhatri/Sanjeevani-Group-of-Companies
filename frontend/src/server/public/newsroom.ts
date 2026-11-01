@@ -13,6 +13,7 @@ import {
 export type Story = NewsroomStory & { href?: string };
 
 export type NewsroomData = {
+  noticeStories: Story[];
   pressReleases: Story[];
   news: Story[];
   events: Story[];
@@ -26,6 +27,7 @@ export const NEWS_KINDS = {
   news: { title: "News", types: ["NEWS", "ANNOUNCEMENT"] as const },
   "press-releases": { title: "Press releases", types: ["PRESS_RELEASE"] as const },
   events: { title: "Events", types: [] as const },
+  notices: { title: "Notices", types: [] as const },
 } as const;
 export type NewsKind = keyof typeof NEWS_KINDS;
 
@@ -34,11 +36,17 @@ export const storySlug = (title: string) =>
   title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
 const withPages = (kind: NewsKind, stories: NewsroomStory[]): Story[] => stories.map((s) => ({ ...s, href: `/newsroom/${kind}/${storySlug(s.title)}` }));
 
+// Notices as cards for the Notices page (they have no photo of their own).
+const NOTICE_IMAGE = "/news/news.png";
+const noticeStories = (notices: (CompanyNotice & { href?: string; image?: string; summary?: string })[]): Story[] =>
+  notices.map((n) => ({ image: n.image ?? NOTICE_IMAGE, alt: n.title, date: n.date, title: n.title, summary: n.summary ?? n.company, href: n.href ?? `/newsroom/notices/${storySlug(n.title)}` }));
+
 const BUNDLED: NewsroomData = {
+  noticeStories: noticeStories(companyNotices),
   pressReleases: withPages("press-releases", latestPressReleases),
   news: withPages("news", latestNews),
   events: withPages("events", latestEvents),
-  notices: companyNotices,
+  notices: companyNotices.map((n) => ({ ...n, href: `/newsroom/notices/${storySlug(n.title)}` })),
   youtube: youtubeVideos,
   photos: galleryPhotos,
   galleryVideos,
@@ -57,7 +65,7 @@ async function fromDatabase(): Promise<NewsroomData> {
       take: 200,
     }),
     prisma.event.findMany({ where: { status: "PUBLISHED" }, include: { coverImage: image }, orderBy: { startsAt: "desc" }, take: 200 }),
-    prisma.notice.findMany({ where: { status: "PUBLISHED" }, include: { company: { select: { name: true } } }, orderBy: { noticeDate: "desc" }, take: 100 }),
+    prisma.notice.findMany({ where: { status: "PUBLISHED" }, include: { company: { select: { name: true } }, attachment: image }, orderBy: { noticeDate: "desc" }, take: 100 }),
     prisma.video.findMany({ where: { status: "PUBLISHED" }, include: { thumbnail: image, file: image }, orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }] }),
     prisma.gallery.findMany({ where: { status: "PUBLISHED" }, include: { items: { include: { media: image }, orderBy: { sortOrder: "asc" } } }, orderBy: { createdAt: "desc" } }),
   ]);
@@ -72,6 +80,10 @@ async function fromDatabase(): Promise<NewsroomData> {
   });
 
   return {
+    noticeStories: noticeStories(notices.map((n) => ({
+      company: n.company?.name ?? "Sanjeevani Group", date: formatKathmandu(n.noticeDate), title: n.title,
+      href: `/newsroom/notices/${n.id}`, image: n.attachment?.url, summary: `${n.company?.name ?? "Sanjeevani Group"}${n.body ? `: ${n.body.slice(0, 140)}` : ""}`,
+    }))),
     pressReleases: articles.filter((a) => a.type === "PRESS_RELEASE").map(story),
     news: articles.filter((a) => a.type !== "PRESS_RELEASE").map(story),
     events: events.map((e) => ({
@@ -82,7 +94,7 @@ async function fromDatabase(): Promise<NewsroomData> {
       summary: e.summary ?? "",
       href: `/newsroom/events/${e.slug}`,
     })),
-    notices: notices.map((n) => ({ company: n.company?.name ?? "Sanjeevani Group", date: formatKathmandu(n.noticeDate), title: n.title })),
+    notices: notices.map((n) => ({ company: n.company?.name ?? "Sanjeevani Group", date: formatKathmandu(n.noticeDate), title: n.title, href: `/newsroom/notices/${n.id}` })),
     youtube: videos.filter((v) => v.placement === "NEWSROOM_YOUTUBE" && v.url).map((v) => ({ url: v.url!, title: v.title, thumbnail: v.thumbnail?.url })),
     photos: galleries.flatMap((g) => g.items.map((i) => ({ src: i.media.url, alt: i.altText, caption: i.caption }))),
     galleryVideos: videos.filter((v) => v.placement === "GALLERY").flatMap((v): GalleryVideo[] =>
@@ -122,18 +134,45 @@ export type StoryPage = {
   venue: string | null;
   when: string | null;
   related: Story[];
+  photos: GalleryPhoto[];
+  videos: GalleryVideo[];
 };
+
+type MediaRow = { mediaId: string | null; videoUrl: string | null; caption: string | null; altText: string | null; media: { url: string; altText: string | null } | null };
+function storyGallery(rows: MediaRow[], title: string) {
+  const photos: GalleryPhoto[] = [];
+  const videos: GalleryVideo[] = [];
+  for (const r of rows) {
+    if (r.videoUrl) videos.push({ kind: "youtube", url: r.videoUrl, title: r.caption ?? title, thumbnail: r.media?.url });
+    else if (r.media) photos.push({ src: r.media.url, alt: r.altText ?? r.media.altText ?? title, caption: r.caption ?? "" });
+  }
+  return { photos, videos };
+}
+const mediaInclude = { orderBy: { sortOrder: "asc" as const }, include: { media: image } };
 
 export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPage | null> {
   const newsroom = await loadNewsroom();
-  const list = kind === "events" ? newsroom.events : kind === "press-releases" ? newsroom.pressReleases : newsroom.news;
+  const list = kind === "events" ? newsroom.events : kind === "press-releases" ? newsroom.pressReleases : kind === "notices" ? newsroom.noticeStories : newsroom.news;
   const related = (href: string) => list.filter((s) => s.href !== href).slice(0, 3);
   const company = (c: { name: string; slug: string; status: string } | null) => (c?.status === "PUBLISHED" ? { name: c.name, slug: c.slug } : null);
 
   if (isDatabaseConfigured()) {
     try {
-      if (kind === "events") {
-        const e = await prisma.event.findFirst({ where: { slug, status: "PUBLISHED" }, include: { coverImage: image, company: { select: { name: true, slug: true, status: true } } } });
+      if (kind === "notices") {
+        const n = /^[0-9a-f-]{36}$/.test(slug)
+          ? await prisma.notice.findFirst({ where: { id: slug, status: "PUBLISHED" }, include: { attachment: image, company: { select: { name: true, slug: true, status: true } }, media: mediaInclude } })
+          : null;
+        if (n) {
+          return {
+            kind, title: n.title, excerpt: null, date: formatKathmandu(n.noticeDate),
+            cover: n.attachment ? { url: n.attachment.url, alt: n.attachment.altText ?? n.title } : null,
+            blocks: (n.body ?? "").split(/\n\s*\n/).map((t) => t.trim()).filter(Boolean).map((text) => ({ type: "paragraph", text })),
+            company: company(n.company), tags: [], link: null, venue: null, when: null,
+            related: related(`/newsroom/notices/${n.id}`), ...storyGallery(n.media, n.title),
+          };
+        }
+      } else if (kind === "events") {
+        const e = await prisma.event.findFirst({ where: { slug, status: "PUBLISHED" }, include: { coverImage: image, company: { select: { name: true, slug: true, status: true } }, media: mediaInclude } });
         if (e) {
           return {
             kind, title: e.title, excerpt: e.summary, date: formatKathmandu(e.startsAt),
@@ -141,13 +180,13 @@ export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPa
             blocks: Array.isArray(e.body) ? (e.body as unknown[]) : [], // the summary is already shown as the lead
             company: company(e.company), tags: [], link: e.linkUrl, venue: e.venue,
             when: `${formatKathmandu(e.startsAt, true)}${e.endsAt ? ` to ${formatKathmandu(e.endsAt, true)}` : ""}`,
-            related: related(`/newsroom/events/${e.slug}`),
+            related: related(`/newsroom/events/${e.slug}`), ...storyGallery(e.media, e.title),
           };
         }
       } else {
         const a = await prisma.newsArticle.findFirst({
           where: { slug, status: "PUBLISHED", type: { in: [...NEWS_KINDS[kind].types] }, OR: [{ publishAt: null }, { publishAt: { lte: new Date() } }] },
-          include: { coverImage: image, company: { select: { name: true, slug: true, status: true } } },
+          include: { coverImage: image, company: { select: { name: true, slug: true, status: true } }, media: mediaInclude },
         });
         if (a) {
           return {
@@ -155,7 +194,7 @@ export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPa
             cover: a.coverImage ? { url: a.coverImage.url, alt: a.coverImage.altText ?? a.title } : null,
             blocks: Array.isArray(a.body) ? (a.body as unknown[]) : [],
             company: company(a.company), tags: a.tags, link: a.linkUrl, venue: null, when: null,
-            related: related(`/newsroom/${kind}/${a.slug}`),
+            related: related(`/newsroom/${kind}/${a.slug}`), ...storyGallery(a.media, a.title),
           };
         }
       }
@@ -168,10 +207,10 @@ export async function loadArticle(kind: NewsKind, slug: string): Promise<StoryPa
   const sample = list.find((s) => s.href === `/newsroom/${kind}/${slug}`);
   if (!sample) return null;
   return {
-    kind, title: sample.title, excerpt: sample.summary || null, date: sample.date,
-    cover: { url: sample.image, alt: sample.alt }, blocks: [],
+    kind, title: sample.title, excerpt: kind === "notices" ? `Notice from ${sample.summary}.` : sample.summary || null, date: sample.date,
+    cover: kind === "notices" ? null : { url: sample.image, alt: sample.alt }, blocks: [],
     company: null, tags: [], link: sample.link ?? null, venue: null, when: kind === "events" ? sample.date : null,
-    related: related(sample.href ?? ""),
+    related: related(sample.href ?? ""), photos: [], videos: [],
   };
 }
 

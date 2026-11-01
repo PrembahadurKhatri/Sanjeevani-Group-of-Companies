@@ -64,6 +64,15 @@ function strictBoth<T extends z.ZodRawShape>(shape: T, required: (keyof T)[]) {
 
 const faq = strictBoth({ question: str(5, 300), answer: str(10, 5000), sortOrder }, ["question", "answer"]);
 
+// A photo (an uploaded image) or a video (a YouTube link) in a story's gallery.
+const storyMediaItem = z
+  .object({ mediaId: z.string().uuid().nullable().optional(), videoUrl: youtube.nullable().optional(), caption: optionalStr(300), altText: optionalStr(250) })
+  .strict()
+  .refine((m) => Boolean(m.mediaId || m.videoUrl), "Add a photo or a YouTube link.");
+const storyMedia = z.array(storyMediaItem).max(60);
+const storyMediaInclude = { orderBy: { sortOrder: "asc" }, include: { media: image } } as const;
+const storyMediaIds = (i: Input) => (Array.isArray(i.media) ? ids(...i.media.map((m) => (m as { mediaId?: unknown }).mediaId)) : []);
+
 const news = strictBoth(
   {
     slug: slugSchema,
@@ -79,6 +88,7 @@ const news = strictBoth(
     seoDescription: optionalStr(160),
     publishAt: z.string().datetime().nullable(),
     linkUrl: hrefSchema.nullable().optional(),
+    media: storyMedia,
   },
   ["title"],
 );
@@ -95,12 +105,13 @@ const event = strictBoth(
     coverImageId: uuidOrNull,
     companyId: uuidOrNull,
     linkUrl: hrefSchema.nullable().optional(),
+    media: storyMedia,
   },
   ["title", "startsAt"],
 );
 
 const notice = strictBoth(
-  { title: str(3, 200), body: optionalStr(5000), noticeDate: z.string().datetime(), companyId: uuidOrNull, attachmentId: uuidOrNull },
+  { title: str(3, 200), body: optionalStr(5000), noticeDate: z.string().datetime(), companyId: uuidOrNull, attachmentId: uuidOrNull, media: storyMedia },
   ["title", "noticeDate"],
 );
 
@@ -175,25 +186,25 @@ export const CONTENT_TYPES = {
   },
   news: {
     model: "newsArticle", scope: "company", stamps: "approve", label: "News article", update: "content.update", publish: "content.publish", ...news,
-    toData: (i) => ({ ...pick(i, ["slug", "type", "title", "excerpt", "body", "coverImageId", "companyId", "categoryId", "tags", "seoTitle", "seoDescription", "linkUrl"]), publishAt: dateField(i.publishAt) }),
+    toData: (i, mode) => ({ ...pick(i, ["slug", "type", "title", "excerpt", "body", "coverImageId", "companyId", "categoryId", "tags", "seoTitle", "seoDescription", "linkUrl"]), publishAt: dateField(i.publishAt), media: nested(i.media, mode) }),
     owners: companyOwner, slugFrom: "title", publicKey: "slug",
-    include: { coverImage: image, company: { select: { id: true, name: true, slug: true } }, category: { select: { slug: true, name: true } } },
+    include: { coverImage: image, company: { select: { id: true, name: true, slug: true } }, category: { select: { slug: true, name: true } }, media: storyMediaInclude },
     orderBy: [{ publishedAt: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
     publicWhere: (now) => ({ OR: [{ publishAt: null }, { publishAt: { lte: now } }] }),
-    mediaIds: (i) => [...ids(i.coverImageId), ...blockMediaIds(i.body as Block[] | null)],
+    mediaIds: (i) => [...ids(i.coverImageId), ...blockMediaIds(i.body as Block[] | null), ...storyMediaIds(i)],
   },
   events: {
     model: "event", scope: "company", stamps: "approve", label: "Event", update: "content.update", publish: "content.publish", ...event,
-    toData: (i) => ({ ...pick(i, ["slug", "title", "summary", "body", "venue", "coverImageId", "companyId", "linkUrl"]), startsAt: dateField(i.startsAt), endsAt: dateField(i.endsAt) }),
+    toData: (i, mode) => ({ ...pick(i, ["slug", "title", "summary", "body", "venue", "coverImageId", "companyId", "linkUrl"]), startsAt: dateField(i.startsAt), endsAt: dateField(i.endsAt), media: nested(i.media, mode) }),
     owners: companyOwner, slugFrom: "title", publicKey: "slug",
-    include: { coverImage: image, company: { select: { id: true, name: true, slug: true } } },
-    orderBy: [{ startsAt: "desc" }], mediaIds: (i) => [...ids(i.coverImageId), ...blockMediaIds(i.body as Block[] | null)],
+    include: { coverImage: image, company: { select: { id: true, name: true, slug: true } }, media: storyMediaInclude },
+    orderBy: [{ startsAt: "desc" }], mediaIds: (i) => [...ids(i.coverImageId), ...blockMediaIds(i.body as Block[] | null), ...storyMediaIds(i)],
   },
   notices: {
     model: "notice", scope: "company", stamps: "edit", label: "Notice", update: "content.update", publish: "content.publish", ...notice,
-    toData: (i) => ({ ...pick(i, ["title", "body", "companyId", "attachmentId"]), noticeDate: dateField(i.noticeDate) }),
-    owners: companyOwner, include: { attachment: image, company: { select: { id: true, name: true, slug: true } } },
-    orderBy: [{ noticeDate: "desc" }], mediaIds: (i) => ids(i.attachmentId),
+    toData: (i, mode) => ({ ...pick(i, ["title", "body", "companyId", "attachmentId"]), noticeDate: dateField(i.noticeDate), media: nested(i.media, mode) }),
+    owners: companyOwner, include: { attachment: image, company: { select: { id: true, name: true, slug: true } }, media: storyMediaInclude },
+    orderBy: [{ noticeDate: "desc" }], mediaIds: (i) => [...ids(i.attachmentId), ...storyMediaIds(i)],
   },
   videos: {
     model: "video", scope: "group", stamps: "none", label: "Video", update: "content.update", publish: "content.publish", ...video,
