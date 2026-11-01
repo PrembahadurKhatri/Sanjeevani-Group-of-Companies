@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import SectionPage from "@/components/SectionPage";
 import { loadSiteVacancies } from "@/server/public/vacancies";
+import { loadNewsroom } from "@/server/public/newsroom";
 
 const sectionSlugs = [
   "our-story",
@@ -64,5 +65,6 @@ export default async function GroupSectionPage({
 }) {
   if (!sectionSlugs.includes(params.section)) notFound();
   const siteVacancies = params.section === "careers" ? await loadSiteVacancies() : undefined;
-  return <SectionPage section={params.section} siteVacancies={siteVacancies} />;
+  const newsroom = params.section === "newsroom" || params.section === "gallery" ? await loadNewsroom() : undefined;
+  return <SectionPage section={params.section} siteVacancies={siteVacancies} newsroom={newsroom} />;
 }

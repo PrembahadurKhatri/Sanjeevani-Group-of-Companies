@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { toWebsiteUrl } from "@/data/companyProfiles";
+import { SECTION_KEYS } from "@/lib/company-sections";
 
 const optionalText = (max: number) =>
   z.string().trim().max(max).transform((value) => value || null).nullable().optional();
@@ -41,6 +42,29 @@ const currentYear = new Date().getFullYear();
 
 const httpsUrl = z.string().trim().url("Enter a full link starting with https://").refine((v) => v.startsWith("https://"), "Use an https:// link.").nullable().optional();
 
+export const keyFactsSchema = z.array(z.object({ label: z.string().trim().min(1).max(60), value: z.string().trim().min(1).max(120) })).max(12);
+
+// A Google Maps link or embed address; other sites are refused so the page
+// never frames arbitrary content.
+const mapUrl = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine((v) => v === "" || /^https:\/\/(www\.)?(google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps)/i.test(v), "Use a Google Maps link (https://maps.google.com/… or https://www.google.com/maps/…).")
+  .transform((v) => v || null)
+  .nullable()
+  .optional();
+
+export const profileSectionsSchema = z
+  .array(z.object({
+    key: z.enum(SECTION_KEYS),
+    enabled: z.boolean(),
+    label: z.string().trim().max(40).optional().transform((v) => v || undefined),
+    showEmpty: z.boolean().optional(),
+  }))
+  .max(SECTION_KEYS.length)
+  .refine((list) => new Set(list.map((s) => s.key)).size === list.length, "Each section can only be listed once.");
+
 const companyFields = {
   name: z.string().trim().min(2, "Enter the company name.").max(160),
   slug: slugSchema,
@@ -65,6 +89,22 @@ const companyFields = {
   youtubeUrl: httpsUrl,
   seoTitle: z.string().trim().max(70).nullable().optional(),
   seoDescription: z.string().trim().max(160).nullable().optional(),
+  // Profile page
+  shortName: optionalText(60),
+  industry: optionalText(120),
+  headquarters: optionalText(200),
+  fullDescription: optionalText(10000),
+  keyFacts: keyFactsSchema.optional(),
+  background: optionalText(5000),
+  history: optionalText(5000),
+  coreValues: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
+  philosophy: optionalText(3000),
+  servicesTitle: optionalText(40),
+  registeredAddress: optionalText(300),
+  officeHours: optionalText(300),
+  mapUrl: mapUrl,
+  shareImageId: z.string().uuid().nullable().optional(),
+  profileSections: profileSectionsSchema.optional(),
 };
 
 const companyBase = z.object(companyFields);

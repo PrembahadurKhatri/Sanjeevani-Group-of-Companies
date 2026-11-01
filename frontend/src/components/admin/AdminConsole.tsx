@@ -77,7 +77,7 @@ export default function AdminConsole() {
       const result = await api<Me>("/api/auth/me");
       setMe(result);
       const params = new URLSearchParams(window.location.search);
-      const wanted: TabKey | null = params.has("application") ? "applications" : params.has("contact") ? "contact" : null;
+      const wanted = (params.has("application") ? "applications" : params.has("contact") ? "contact" : params.get("tab")) as TabKey | null;
       const open = TABS.filter((t) => allowed(result, t)).map((t) => t.key);
       setTab(wanted && open.includes(wanted) ? wanted : "dashboard");
     } catch {

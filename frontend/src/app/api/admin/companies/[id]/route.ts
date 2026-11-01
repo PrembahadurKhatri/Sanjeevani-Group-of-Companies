@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission, requireUser } from "@/server/auth/guard";
 import { deleteCompany, getAdminCompany, updateCompany } from "@/server/companies/service";
@@ -23,6 +24,7 @@ export const PATCH = handle(async (request: Request, { params }: Context) => {
   const input = companyUpdateSchema.parse(await readJson(request));
   const { ipHash, userAgent } = requestMeta(request);
   const company = await updateCompany(user, id, input, { ipHash, userAgent });
+  revalidatePath(`/businesses/${company.slug}`); // the public page shows the change at once
   return NextResponse.json({ company });
 });
 

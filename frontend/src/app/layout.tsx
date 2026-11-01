@@ -5,6 +5,7 @@ import "./legal.css";
 import "./leaders.css";
 import "./careers.css";
 import "./gallery.css";
+import "./company-profile.css";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import VisitTracker from "@/components/VisitTracker";
 

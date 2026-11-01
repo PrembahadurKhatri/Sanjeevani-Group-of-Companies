@@ -142,7 +142,7 @@ const leader = strictBoth(
     instagramUrl: socialUrl,
     xUrl: socialUrl,
     assignments: z
-      .array(z.object({ companyId: z.string().uuid().nullable(), title: str(2, 120), tier: z.enum(["BOARD", "TEAM"]).default("TEAM"), isManagingDirector: z.boolean().default(false) }))
+      .array(z.object({ companyId: z.string().uuid().nullable(), title: str(2, 120), tier: z.enum(["BOARD", "EXECUTIVE", "TEAM"]).default("TEAM"), isManagingDirector: z.boolean().default(false) }))
       .min(1)
       .max(20),
     career: z.array(z.object({ period: str(1, 60), position: str(1, 160), organisation: str(1, 160) })).max(40),

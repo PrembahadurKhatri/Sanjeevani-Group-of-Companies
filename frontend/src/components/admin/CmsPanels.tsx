@@ -3,6 +3,10 @@ import { type FormEvent, useCallback, useEffect, useState } from "react";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
 import ContentManager, { type ContentConfig } from "@/components/admin/ContentManager";
 import { type Field, FieldInputs, fromItem, type Lookups, toInput } from "@/components/admin/FieldForm";
+import {
+  ACHIEVEMENT_FIELDS, CompanyCareers, CompanyNews, ItemsManager, OFFERING_FIELDS, RELATION_FIELDS, SectionsEditor, sectionsForSave,
+} from "@/components/admin/CompanyProfileTabs";
+import { resolveSections } from "@/lib/company-sections";
 
 type Company = Record<string, unknown> & {
   id: string; name: string; slug: string; status: string; updatedAt: string; sectorId: string | null; website: string | null;
@@ -76,7 +80,7 @@ const LEADER: ContentConfig = {
       fields: [
         { k: "title", label: "Title", type: "text", required: true },
         { k: "companyId", label: "Company", type: "select", options: "companies", empty: "Whole group" },
-        { k: "tier", label: "Shown under", type: "select", options: [["BOARD", "Board of directors"], ["TEAM", "Leadership team"]], required: true },
+        { k: "tier", label: "Shown under", type: "select", options: [["BOARD", "Board of directors"], ["EXECUTIVE", "Executive leadership"], ["TEAM", "Management team"]], required: true },
         { k: "isManagingDirector", label: "Managing Director of this company", type: "checkbox" },
       ],
     },
@@ -223,41 +227,78 @@ export function NewsroomPanel({ me }: { me: Me }) {
 
 // ---------------------------------------------------------------- businesses
 
-const COMPANY_HEAD: Field[] = [
-  { k: "s-basics", label: "Basic details", type: "section" },
+// Company form tabs. Fields keep their existing names; tabs only group them.
+const BASIC_FIELDS: Field[] = [
+  { k: "s-basics", label: "Company", type: "section" },
   { k: "name", label: "Company name", type: "text", required: true },
+  { k: "shortName", label: "Short name", type: "text", help: "Optional, e.g. SHP." },
   { k: "sectorId", label: "Category", type: "select", options: "sectors", empty: "No category" },
   { k: "sectorLabel", label: "Sector shown on the page", type: "text", required: true, help: "e.g. Healthcare, Education or Agriculture" },
   { k: "category", label: "Kind", type: "select", options: [["HEALTHCARE", "Healthcare"], ["EDUCATION", "Education"], ["AGRICULTURE", "Agriculture"], ["OTHER", "Other"]], required: true },
+  { k: "industry", label: "Industry or business type", type: "text" },
   { k: "establishedYear", label: "Established (year)", type: "number" },
-  { k: "s-images", label: "Logo and photo", type: "section", help: "The page photo is the large picture at the top of the company page." },
+  { k: "headquarters", label: "Headquarters", type: "text", help: "e.g. Pokhara, Nepal. Taken from the main office when empty." },
+  { k: "s-images", label: "Logo and cover image", type: "section", help: "The cover image is the large picture at the top of the company page." },
   { k: "logoId", label: "Logo", type: "image", rel: "logo", folder: "companies" },
-  { k: "bannerId", label: "Page photo", type: "image", rel: "banner", folder: "companies" },
-  { k: "s-about", label: "About the company", type: "section", help: "Shown in the page introduction and the Overview section." },
-  { k: "description", label: "Overview", type: "textarea", required: true },
-  { k: "mission", label: "Mission", type: "textarea" },
-  { k: "vision", label: "Vision", type: "textarea" },
-  { k: "services", label: "Services or departments", type: "lines", help: "One per line." },
-  { k: "s-contact", label: "Get in touch", type: "section", help: "Contact details shown at the bottom of the company page." },
+  { k: "bannerId", label: "Cover image", type: "image", rel: "banner", folder: "companies" },
+  { k: "s-text", label: "Description", type: "section" },
+  { k: "description", label: "Short description", type: "textarea", required: true, help: "One or two sentences, shown at the top of the page and on cards." },
+  { k: "fullDescription", label: "Full description", type: "textarea", help: "Shown in Overview. Leave a blank line between paragraphs." },
+  { k: "s-contact", label: "Main contact", type: "section" },
   { k: "email", label: "Email", type: "email" },
   { k: "phone", label: "Phone", type: "text" },
   { k: "website", label: "Website", type: "text", help: "e.g. www.example.com" },
 ];
-const COMPANY_TAIL: Field[] = [
+const OVERVIEW_FIELDS: Field[] = [
+  {
+    k: "keyFacts", label: "Key facts", type: "rows", add: "Add a fact", blank: { label: "", value: "" },
+    help: "Short facts listed beside the overview, e.g. Beds: 300 or Students: 1,200. Overview also previews the latest services, leaders, projects, news and vacancies automatically.",
+    fields: [
+      { k: "label", label: "Fact", type: "text", required: true },
+      { k: "value", label: "Value", type: "text", required: true },
+    ],
+  },
+];
+const ABOUT_FIELDS: Field[] = [
+  { k: "background", label: "Company background", type: "textarea" },
+  { k: "history", label: "History", type: "textarea" },
+  { k: "mission", label: "Mission", type: "textarea" },
+  { k: "vision", label: "Vision", type: "textarea" },
+  { k: "coreValues", label: "Core values", type: "lines", help: "One per line." },
+  { k: "philosophy", label: "Business philosophy", type: "textarea" },
+];
+const SERVICES_FIELDS: Field[] = [
+  { k: "servicesTitle", label: "Section title", type: "text", help: "e.g. Services, Products or Solutions. Default: Services." },
+  { k: "services", label: "Simple list", type: "lines", help: "One per line. Shown only while there are no detailed items below." },
+];
+const CONTACT_FIELDS: Field[] = [
+  { k: "s-offices", label: "Offices", type: "section", help: "Email, phone and website are under Basic information." },
+  { k: "registeredAddress", label: "Registered office address", type: "text" },
+  { k: "officeHours", label: "Office hours", type: "text", help: "e.g. Sunday to Friday, 9am to 5pm" },
+  { k: "mapUrl", label: "Map link", type: "url", help: "A Google Maps link for Get directions. Without one, the main office address is used." },
   { k: "s-social", label: "Social media", type: "section" },
   { k: "facebookUrl", label: "Facebook", type: "url" },
   { k: "linkedinUrl", label: "LinkedIn", type: "url" },
   { k: "instagramUrl", label: "Instagram", type: "url" },
   { k: "youtubeUrl", label: "YouTube", type: "url" },
-  { k: "s-seo", label: "Search engines", type: "section", help: "Optional. The company name and overview are used when these are empty." },
+];
+const SEO_FIELDS: Field[] = [
+  { k: "s-seo", label: "Search engines and sharing", type: "section", help: "Optional. The company name and short description are used when these are empty." },
   { k: "seoTitle", label: "Search title", type: "text", help: "Up to 70 characters." },
-  { k: "seoDescription", label: "Search description", type: "textarea", help: "Up to 160 characters." },
+  { k: "seoDescription", label: "Meta description", type: "textarea", help: "Up to 160 characters." },
+  { k: "shareImageId", label: "Social sharing image", type: "image", rel: "shareImage", folder: "companies", help: "Shown when the page is shared. The cover image is used when empty." },
   { k: "s-display", label: "Display", type: "section" },
   { k: "featured", label: "Feature this company", type: "checkbox" },
   { k: "sortOrder", label: "Order in lists", type: "number" },
 ];
 // All company fields, for converting to and from the API in one go.
-const COMPANY_FIELDS: Field[] = [...COMPANY_HEAD, ...COMPANY_TAIL];
+const COMPANY_FIELDS: Field[] = [...BASIC_FIELDS, ...OVERVIEW_FIELDS, ...ABOUT_FIELDS, ...SERVICES_FIELDS, ...CONTACT_FIELDS, ...SEO_FIELDS];
+const FIELD_TABS: Record<string, Field[]> = { basic: BASIC_FIELDS, overview: OVERVIEW_FIELDS, about: ABOUT_FIELDS, services: SERVICES_FIELDS, contact: CONTACT_FIELDS, seo: SEO_FIELDS };
+const COMPANY_TABS: [string, string][] = [
+  ["basic", "Basic information"], ["overview", "Overview"], ["about", "About us"], ["services", "Services / Products"], ["leadership", "Leadership"],
+  ["businesses", "Businesses"], ["projects", "Projects & achievements"], ["news", "News & updates"], ["careers", "Careers"], ["gallery", "Gallery"],
+  ["contact", "Contact information"], ["seo", "SEO & publishing"],
+];
 const LOCATION_FIELDS: Field[] = [
   {
     k: "locations", label: "Offices and addresses", type: "rows", add: "Add a location",
@@ -305,7 +346,8 @@ function CompanyLeaders({ me, companyId }: { me: Me; companyId: string }) {
 
 export function BusinessesPanel({ me }: { me: Me }) {
   const { lookups, companies, sectors, reload, loading, loadError } = useLookups(me);
-  const [editing, setEditing] = useState<{ id: string | null; updatedAt?: string; values: Record<string, unknown>; locations: Record<string, unknown> } | null>(null);
+  const [editing, setEditing] = useState<{ id: string | null; updatedAt?: string; values: Record<string, unknown>; locations: Record<string, unknown>; sections: unknown } | null>(null);
+  const [formTab, setFormTab] = useState("basic");
   const [sectorForm, setSectorForm] = useState<{ id: string | null; name: string; detail: string } | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -330,7 +372,8 @@ export function BusinessesPanel({ me }: { me: Me }) {
     event.preventDefault();
     if (!editing) return;
     const then = ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null)?.value ?? "";
-    const body = toInput(COMPANY_FIELDS, editing.values);
+    const servicesTitle = String(editing.values.servicesTitle ?? "");
+    const body = { ...toInput(COMPANY_FIELDS, editing.values), profileSections: sectionsForSave(resolveSections(editing.sections, servicesTitle), servicesTitle) };
     const { locations } = toInput(LOCATION_FIELDS, editing.locations) as { locations: unknown[] };
     const name = String(editing.values.name || "Company");
     await act(async () => {
@@ -340,8 +383,14 @@ export function BusinessesPanel({ me }: { me: Me }) {
       await api(`/api/admin/companies/${id}/locations`, { method: "PUT", body: { locations } });
       if (then === "publish" && currentCompany?.status === "ARCHIVED") await api(`/api/admin/companies/${id}/status`, { body: { action: "restore" } });
       if (then) await api(`/api/admin/companies/${id}/status`, { body: { action: then } });
-      setEditing(null);
-    }, then === "publish" ? `${name} saved and live on the website.` : then === "unpublish" ? `${name} saved and hidden from the website.` : editing.id ? `${name} saved.` : `${name} created as a draft. Publish it when its page is ready.`);
+      if (editing.id) {
+        setEditing(null);
+      } else {
+        // A new company stays open, so its services, leaders and photos can be added next.
+        const { company } = await api<{ company: Company }>(`/api/admin/companies/${id}`);
+        editCompany(company, formTab);
+      }
+    }, then === "publish" ? `${name} saved and live on the website.` : then === "unpublish" ? `${name} saved and hidden from the website.` : editing.id ? `${name} saved.` : `${name} created as a draft. You can now add its services, leaders, photos and more.`);
   }
 
   async function saveSector(event: FormEvent) {
@@ -365,12 +414,15 @@ export function BusinessesPanel({ me }: { me: Me }) {
       id: null,
       values: fromItem(COMPANY_FIELDS, { category: "OTHER", sectorId, sectorLabel: sector?.name ?? "" }),
       locations: fromItem(LOCATION_FIELDS, { locations: [{ name: "Head office", isPrimary: true }] }),
+      sections: null,
     });
+    setFormTab("basic");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  function editCompany(c: Company) {
+  function editCompany(c: Company, tab = "basic") {
     setSectorForm(null);
-    setEditing({ id: c.id, updatedAt: c.updatedAt, values: fromItem(COMPANY_FIELDS, c), locations: fromItem(LOCATION_FIELDS, c) });
+    setEditing({ id: c.id, updatedAt: c.updatedAt, values: fromItem(COMPANY_FIELDS, c), locations: fromItem(LOCATION_FIELDS, c), sections: c.profileSections ?? null });
+    setFormTab(tab);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -401,23 +453,55 @@ export function BusinessesPanel({ me }: { me: Me }) {
         </form>
       )}
 
-      {editing && (
-        <form className="admin-business-form" onSubmit={saveCompany}>
-          <div className="admin-form-heading"><h3>{editing.id ? `Edit ${String(editing.values.name || "company")}` : "New company"}</h3><button type="button" className="admin-close-button" aria-label="Close" onClick={() => setEditing(null)}>×</button></div>
-          <div className="admin-form-grid">
-            <FieldInputs fields={COMPANY_HEAD} values={editing.values} onChange={(values) => setEditing({ ...editing, values })} lookups={lookups} altFrom={String(editing.values.name ?? "")} idPrefix="co" />
-            <FieldInputs fields={LOCATION_FIELDS} values={editing.locations} onChange={(locations) => setEditing({ ...editing, locations })} lookups={lookups} altFrom="" idPrefix="co-loc" />
-            <FieldInputs fields={COMPANY_TAIL} values={editing.values} onChange={(values) => setEditing({ ...editing, values })} lookups={lookups} altFrom={String(editing.values.name ?? "")} idPrefix="co-tail" />
+      {editing && (() => {
+        const fieldTab = FIELD_TABS[formTab];
+        const id = editing.id;
+        const needsSave = !id && !fieldTab;
+        const update = (values: Record<string, unknown>) => setEditing({ ...editing, values });
+        return (
+          <div className="admin-business-form">
+            <div className="admin-form-heading">
+              <h3>{id ? `Edit ${String(editing.values.name || "company")}` : "New company"}</h3>
+              {currentCompany && <span className={`admin-badge admin-badge-${currentCompany.status.toLowerCase()}`}>{label(currentCompany.status)}</span>}
+              {currentCompany && <a className="admin-link-button adm-preview-link" href={`/businesses/${currentCompany.slug}/preview`} target="_blank" rel="noopener noreferrer">Preview page <span aria-hidden="true">↗</span></a>}
+              <button type="button" className="admin-close-button" aria-label="Close" onClick={() => setEditing(null)}>×</button>
+            </div>
+            <div className="adm-company-tabs"><SubTabs tabs={COMPANY_TABS} current={formTab} onChange={setFormTab} /></div>
+
+            <form id="company-form" onSubmit={saveCompany}>
+              {fieldTab && (
+                <div className="admin-form-grid">
+                  <FieldInputs fields={fieldTab} values={editing.values} onChange={update} lookups={lookups} altFrom={String(editing.values.name ?? "")} idPrefix={`co-${formTab}`} />
+                  {formTab === "contact" && <FieldInputs fields={LOCATION_FIELDS} values={editing.locations} onChange={(locations) => setEditing({ ...editing, locations })} lookups={lookups} altFrom="" idPrefix="co-loc" />}
+                  {formTab === "seo" && <SectionsEditor value={editing.sections} servicesTitle={String(editing.values.servicesTitle ?? "")} onChange={(sections) => setEditing({ ...editing, sections })} />}
+                </div>
+              )}
+            </form>
+
+            {needsSave && <p className="adm-tab-note">Save the company first. Then you can add its {COMPANY_TABS.find(([k]) => k === formTab)?.[1].toLowerCase()} here.</p>}
+            {id && formTab === "about" && <ItemsManager me={me} companyId={id} kind="achievements" noun="milestone" lookups={lookups} fields={ACHIEVEMENT_FIELDS.filter((f) => f.k !== "kind")} defaults={{ kind: "MILESTONE" }} filter={(i) => i.kind === "MILESTONE"} intro="Milestones appear as a timeline in About us." describe={(i) => ({ title: String(i.title), meta: i.date ? formatDate(String(i.date), false) : undefined })} />}
+            {id && formTab === "services" && <ItemsManager me={me} companyId={id} kind="offerings" noun="item" lookups={lookups} fields={OFFERING_FIELDS} intro="Each service, product or solution, with its own image and optional detail page." describe={(i) => ({ title: String(i.title), meta: i.body ? "Has a detail page" : undefined })} />}
+            {id && formTab === "leadership" && <><CompanyLeaders me={me} companyId={id} /><p className="adm-muted">Add or edit people under <a className="admin-link-button" href="/admin?tab=leadership">Leadership</a>, choosing this company in their role and Board of directors, Executive leadership or Management team.</p></>}
+            {id && formTab === "businesses" && <ItemsManager me={me} companyId={id} kind="relations" noun="business" lookups={{ ...lookups, companies: lookups.companies.filter(([cid]) => cid !== id) }} fields={RELATION_FIELDS} intro="Subsidiaries, brands, divisions or associated businesses." describe={(i) => ({ title: String((i.relatedCompany as { name?: string } | null)?.name ?? i.name ?? ""), meta: label(String(i.relationType)) })} />}
+            {id && formTab === "projects" && <ItemsManager me={me} companyId={id} kind="achievements" noun="entry" lookups={lookups} fields={ACHIEVEMENT_FIELDS} defaults={{ kind: "PROJECT" }} filter={(i) => i.kind !== "MILESTONE"} intro="Projects, awards, certifications and achievements. Milestones are under About us." describe={(i) => ({ title: String(i.title), meta: `${label(String(i.kind))}${i.date ? `, ${formatDate(String(i.date), false)}` : ""}` })} />}
+            {id && formTab === "news" && <CompanyNews me={me} companyId={id} />}
+            {id && formTab === "careers" && <CompanyCareers me={me} companyId={id} />}
+            {id && formTab === "gallery" && (
+              hasPermission(me, "content.update")
+                ? <ContentManager key={`gallery-${id}`} me={me} lookups={lookups} config={{ ...NEWSROOM.galleries, heading: "Photo albums for this company", filter: (i) => i.companyId === id, defaults: { companyId: id } }} />
+                : <p className="adm-muted">Photo albums are managed by content editors.</p>
+            )}
+
+            <div className="admin-form-actions">
+              <button type="submit" form="company-form" className={canPublish && !companyLive ? "admin-secondary-button" : "admin-primary-button"}>{companyLive ? "Save changes" : id ? "Save as draft" : "Create company"}</button>
+              {canPublish && !companyLive && <button type="submit" form="company-form" value="publish" className="admin-primary-button">Save and publish</button>}
+              {canPublish && companyLive && <button type="submit" form="company-form" value="unpublish" className="admin-secondary-button">Save and unpublish</button>}
+              <button type="button" className="admin-secondary-button" onClick={() => setEditing(null)}>Close</button>
+            </div>
+            <p className="adm-muted">These buttons save the company&rsquo;s details from every tab. Services, businesses, projects and photos are saved with their own buttons.</p>
           </div>
-          {editing.id && <CompanyLeaders me={me} companyId={editing.id} />}
-          <div className="admin-form-actions">
-            <button type="submit" className={canPublish && !companyLive ? "admin-secondary-button" : "admin-primary-button"}>{companyLive ? "Save changes" : "Save as draft"}</button>
-            {canPublish && !companyLive && <button type="submit" value="publish" className="admin-primary-button">Save and publish</button>}
-            {canPublish && companyLive && <button type="submit" value="unpublish" className="admin-secondary-button">Save and unpublish</button>}
-            <button type="button" className="admin-secondary-button" onClick={() => setEditing(null)}>Cancel</button>
-          </div>
-        </form>
-      )}
+        );
+      })()}
 
       <div className="adm-categories">
         {groups.map(({ sector, companies: list }) => (

@@ -46,7 +46,26 @@ enum UserStatus {
 
 enum LeaderTier {
   BOARD
-  TEAM
+  TEAM // shown as "Management team"
+  EXECUTIVE
+}
+
+// What a company's Projects & Achievements entry is. Milestones also appear
+// in the About section's timeline.
+enum CompanyAchievementKind {
+  PROJECT
+  AWARD
+  CERTIFICATION
+  ACHIEVEMENT
+  MILESTONE
+}
+
+enum CompanyRelationType {
+  SUBSIDIARY
+  BRAND
+  DIVISION
+  ASSOCIATE
+  PARTNER
 }
 
 enum EmploymentType {
@@ -172,43 +191,60 @@ model Sector {
 }
 
 model Company {
-  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  legacyMongoId   String?         @unique
-  groupId         String          @db.Uuid
-  group           Group           @relation(fields: [groupId], references: [id], onDelete: Restrict)
-  sectorId        String?         @db.Uuid
-  sector          Sector?         @relation(fields: [sectorId], references: [id], onDelete: SetNull)
-  name            String          @unique
-  slug            String          @unique
-  category        CompanyCategory
-  sectorLabel     String // e.g. "Healthcare · Education" as shown on cards
-  description     String
-  website         String?
-  email           String?
-  phone           String?
-  establishedYear Int?
-  logoId          String?         @db.Uuid
-  logo            MediaAsset?     @relation("CompanyLogo", fields: [logoId], references: [id], onDelete: SetNull)
-  bannerId        String?         @db.Uuid
-  banner          MediaAsset?     @relation("CompanyBanner", fields: [bannerId], references: [id], onDelete: SetNull)
-  featured        Boolean         @default(false)
-  mission         String?
-  vision          String?
-  services        String[]        @default([])
-  facebookUrl     String?
-  linkedinUrl     String?
-  instagramUrl    String?
-  youtubeUrl      String?
-  seoTitle        String?
-  seoDescription  String?
-  sortOrder       Int             @default(0)
-  status          PublishStatus   @default(DRAFT)
-  publishedAt     DateTime?
-  archivedAt      DateTime?
-  createdById     String?         @db.Uuid
-  updatedById     String?         @db.Uuid
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  legacyMongoId     String?         @unique
+  groupId           String          @db.Uuid
+  group             Group           @relation(fields: [groupId], references: [id], onDelete: Restrict)
+  sectorId          String?         @db.Uuid
+  sector            Sector?         @relation(fields: [sectorId], references: [id], onDelete: SetNull)
+  name              String          @unique
+  slug              String          @unique
+  category          CompanyCategory
+  sectorLabel       String // e.g. "Healthcare · Education" as shown on cards
+  description       String
+  website           String?
+  email             String?
+  phone             String?
+  establishedYear   Int?
+  logoId            String?         @db.Uuid
+  logo              MediaAsset?     @relation("CompanyLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  bannerId          String?         @db.Uuid
+  banner            MediaAsset?     @relation("CompanyBanner", fields: [bannerId], references: [id], onDelete: SetNull)
+  featured          Boolean         @default(false)
+  mission           String?
+  vision            String?
+  services          String[]        @default([])
+  facebookUrl       String?
+  linkedinUrl       String?
+  instagramUrl      String?
+  youtubeUrl        String?
+  seoTitle          String?
+  seoDescription    String?
+  // Profile page (all optional; empty values are not shown)
+  shortName         String?
+  industry          String?
+  headquarters      String?
+  fullDescription   String?
+  keyFacts          Json? // [{ label, value }]
+  background        String?
+  history           String?
+  coreValues        String[]        @default([])
+  philosophy        String?
+  servicesTitle     String? // e.g. "Services", "Products" or "Solutions"
+  registeredAddress String?
+  officeHours       String?
+  mapUrl            String?
+  shareImageId      String?         @db.Uuid
+  shareImage        MediaAsset?     @relation("CompanyShareImage", fields: [shareImageId], references: [id], onDelete: SetNull)
+  profileSections   Json? // [{ key, enabled, label, showEmpty }] in display order
+  sortOrder         Int             @default(0)
+  status            PublishStatus   @default(DRAFT)
+  publishedAt       DateTime?
+  archivedAt        DateTime?
+  createdById       String?         @db.Uuid
+  updatedById       String?         @db.Uuid
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   locations         Location[]
   departments       Department[]
@@ -222,9 +258,77 @@ model Company {
   notices           Notice[]
   galleries         Gallery[]
   contactMessages   ContactMessage[]
+  offerings         CompanyOffering[]
+  achievements      CompanyAchievement[]
+  relations         CompanyRelation[]    @relation("CompanyRelations")
+  relatedTo         CompanyRelation[]    @relation("RelatedCompany")
 
   @@index([status, sortOrder])
   @@index([sectorId])
+}
+
+// A company's own services, products or solutions (not business categories).
+model CompanyOffering {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String        @db.Uuid
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  slug        String // for the optional detail page: /businesses/<company>/<slug>
+  title       String
+  summary     String?
+  body        String? // detail page text; no detail page when empty
+  imageId     String?       @db.Uuid
+  image       MediaAsset?   @relation("CompanyOfferingImage", fields: [imageId], references: [id], onDelete: SetNull)
+  sortOrder   Int           @default(0)
+  status      PublishStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@unique([companyId, slug])
+  @@index([companyId, status, sortOrder])
+}
+
+model CompanyAchievement {
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String                 @db.Uuid
+  company     Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  kind        CompanyAchievementKind @default(PROJECT)
+  title       String
+  description String?
+  date        DateTime?
+  imageId     String?                @db.Uuid
+  image       MediaAsset?            @relation("CompanyAchievementImage", fields: [imageId], references: [id], onDelete: SetNull)
+  sortOrder   Int                    @default(0)
+  status      PublishStatus          @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  @@index([companyId, status, sortOrder])
+}
+
+// A subsidiary, brand, division or associate shown on a company's page. When
+// it is one of the group's own companies, relatedCompanyId points at that
+// record (its name, logo and page are used) instead of copying it.
+model CompanyRelation {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId        String              @db.Uuid
+  company          Company             @relation("CompanyRelations", fields: [companyId], references: [id], onDelete: Cascade)
+  relatedCompanyId String?             @db.Uuid
+  relatedCompany   Company?            @relation("RelatedCompany", fields: [relatedCompanyId], references: [id], onDelete: Cascade)
+  relationType     CompanyRelationType @default(SUBSIDIARY)
+  name             String?
+  description      String?
+  logoId           String?             @db.Uuid
+  logo             MediaAsset?         @relation("CompanyRelationLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  websiteUrl       String?
+  sortOrder        Int                 @default(0)
+  status           PublishStatus       @default(DRAFT)
+  publishedAt      DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([companyId, status, sortOrder])
 }
 
 model Location {
@@ -384,16 +488,20 @@ model MediaAsset {
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
-  sectorImages     Sector[]        @relation("SectorImage")
-  companyLogos     Company[]       @relation("CompanyLogo")
-  companyBanners   Company[]       @relation("CompanyBanner")
+  sectorImages     Sector[]             @relation("SectorImage")
+  companyLogos     Company[]            @relation("CompanyLogo")
+  companyBanners   Company[]            @relation("CompanyBanner")
+  companyShares    Company[]            @relation("CompanyShareImage")
+  offeringImages   CompanyOffering[]    @relation("CompanyOfferingImage")
+  achievementImgs  CompanyAchievement[] @relation("CompanyAchievementImage")
+  relationLogos    CompanyRelation[]    @relation("CompanyRelationLogo")
   leaderPhotos     Leader[]
   careerAreaImages CareerArea[]
   newsCovers       NewsArticle[]
   eventCovers      Event[]
   galleryItems     GalleryItem[]
-  videoThumbnails  Video[]         @relation("VideoThumbnail")
-  videoFiles       Video[]         @relation("VideoFile")
+  videoThumbnails  Video[]              @relation("VideoThumbnail")
+  videoFiles       Video[]              @relation("VideoFile")
   homepageSlides   HomepageSlide[]
   keySectors       KeySector[]
   impactPillars    ImpactPillar[]

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/server/auth/guard";
 import { replaceLocations } from "@/server/companies/service";
@@ -17,5 +18,6 @@ export const PUT = handle(async (request: Request, { params }: Context) => {
   const { locations } = locationsSchema.parse(await readJson(request));
   const { ipHash, userAgent } = requestMeta(request);
   const company = await replaceLocations(user, id, locations, { ipHash, userAgent });
+  revalidatePath(`/businesses/${company.slug}`); // the public page shows the change at once
   return NextResponse.json({ company });
 });

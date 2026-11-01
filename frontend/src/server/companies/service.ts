@@ -18,6 +18,7 @@ const companyInclude = {
   sector: { select: { id: true, slug: true, name: true } },
   logo: image,
   banner: image,
+  shareImage: image,
   locations: { orderBy: [{ isPrimary: "desc" }, { name: "asc" }] },
 } satisfies Prisma.CompanyInclude;
 
@@ -105,11 +106,11 @@ export async function getAdminCompany(user: SessionUser, id: string) {
   return company;
 }
 
-async function assertReferences(db: Prisma.TransactionClient, input: { sectorId?: string | null; logoId?: string | null; bannerId?: string | null }) {
+async function assertReferences(db: Prisma.TransactionClient, input: { sectorId?: string | null; logoId?: string | null; bannerId?: string | null; shareImageId?: string | null }) {
   if (input.sectorId && !(await db.sector.findUnique({ where: { id: input.sectorId }, select: { id: true } }))) {
     throw badRequest("The selected sector does not exist.");
   }
-  for (const [field, id] of [["logo", input.logoId], ["banner", input.bannerId]] as const) {
+  for (const [field, id] of [["logo", input.logoId], ["banner", input.bannerId], ["sharing", input.shareImageId]] as const) {
     if (!id) continue;
     const media = await db.mediaAsset.findUnique({ where: { id }, select: { kind: true } });
     if (!media || media.kind !== "IMAGE") throw badRequest(`The selected ${field} image does not exist.`);
@@ -171,6 +172,7 @@ export async function createCompany(user: SessionUser, input: CompanyCreateInput
         youtubeUrl: input.youtubeUrl ?? null,
         seoTitle: input.seoTitle ?? null,
         seoDescription: input.seoDescription ?? null,
+        ...profileFields(input),
         status: "DRAFT",
         createdById: user.id,
         updatedById: user.id,
@@ -209,6 +211,12 @@ export async function updateCompany(user: SessionUser, id: string, input: Compan
     await recordAudit({ actorId: user.id, action: "company.update", entityType: "Company", entityId: id, companyId: id, metadata: { fields }, ...meta }, tx);
     return company;
   });
+}
+
+// The profile-page fields a new company may be created with (empty ones are left unset).
+function profileFields(input: CompanyCreateInput) {
+  const keys = ["shortName", "industry", "headquarters", "fullDescription", "keyFacts", "background", "history", "coreValues", "philosophy", "servicesTitle", "registeredAddress", "officeHours", "mapUrl", "shareImageId", "profileSections"] as const;
+  return strip(Object.fromEntries(keys.map((k) => [k, input[k]])) as Pick<CompanyCreateInput, (typeof keys)[number]>);
 }
 
 // Drops undefined keys so a partial update can be merged over the stored row.
