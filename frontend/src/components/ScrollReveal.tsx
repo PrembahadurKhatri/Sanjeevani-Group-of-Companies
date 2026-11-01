@@ -39,6 +39,7 @@ export default function ScrollReveal({ scope }: { scope: string }) {
       seen.add(el);
       const box = el.getBoundingClientRect();
       if (box.top < window.innerHeight && box.bottom > 0) return; // already visible: leave as is
+      if (box.width === 0 && box.height === 0) return; // not displayed (e.g. a closed tab): never hide it
       const index = el.parentElement ? Array.prototype.indexOf.call(el.parentElement.children, el) : 0;
       el.style.setProperty("--rv-delay", `${(index % 6) * 80}ms`);
       el.classList.add("rv");
