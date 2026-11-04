@@ -1,25 +1,24 @@
 # Backend: PostgreSQL + Prisma
 
-The website is moving from MongoDB/Mongoose to PostgreSQL (Neon) with Prisma,
-inside the same Next.js app (no separate server). This file tracks how to run
-it and what is done.
+The website uses PostgreSQL (Neon) with Prisma inside the same Next.js app
+(no separate server). Database APIs and background tasks use PostgreSQL.
 
 ## Status by phase
 
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Repository audit and architecture | Done |
-| 2 | Prisma schema, first migration, data layer, seed, unit tests | **Done (not yet run against a database)** |
-| 3 | Individual admin accounts, sessions, roles, company-scoped access, audit log | **Done: API only, not yet run against a database** |
-| 4 | Company management and media uploads (Cloudinary) | **Done: API only, not yet run against a database or Cloudinary** |
-| 5 | Vacancies and applications on PostgreSQL, private CV storage, emails (Resend) | **Done: API only, not yet run against a database, Cloudinary or Resend** |
-| 6 | Leaders, newsroom, homepage, FAQs, legal pages with review workflow | **Done: API only, not yet run against a database** |
+| 2 | Prisma schema, migrations, data layer, seed, unit tests | **Done: migrated, validated, and seeded against PostgreSQL** |
+| 3 | Individual admin accounts, sessions, roles, company-scoped access, audit log | **Done: database-backed authorization and admin accounts are in use** |
+| 4 | Company management and media uploads (Cloudinary) | **API and database are in use; production Cloudinary delivery still needs deployment verification** |
+| 5 | Vacancies and applications on PostgreSQL, private CV storage, emails (Resend) | **Database-backed; provider delivery and production application flow still need deployment verification** |
+| 6 | Leaders, newsroom, homepage, FAQs, legal pages with review workflow | **Database-backed workflows are implemented; only published records are shown when a database is configured** |
 | 7 | Contact messages, settings, exports | **Done** (contact form on /contact now posts to the inbox) |
-| 8 | Admin console, switch-over, production readiness | **In progress**: `/admin` console and careers pages on PostgreSQL done; company, leader, newsroom and legal pages still read `src/data` |
+| 8 | Admin console, switch-over, production readiness | **In progress**: careers and directory APIs use PostgreSQL; richer company, leader, newsroom and legal pages still read `src/data` |
 
-Until Phase 8 the live pages keep using MongoDB, and the current `/admin`
-page keeps its shared password. The new account APIs below only work once a
-database is configured.
+The legacy directory screen still uses its shared password. Applicant records
+are managed in the individual-admin console, with permission- and
+company-scoped access.
 
 ## Layout
 
@@ -332,8 +331,10 @@ the database during the switch-over (Phase 8).
 
 ## Admin console (Phase 8)
 
-`/admin` is the new console (the shared-password Mongo admin moved to
-`/admin/legacy` until the switch-over). Sign-in uses individual accounts;
+`/admin` is the individual-account admin console. `/admin/legacy` remains
+temporarily for shared-password business management; it no longer displays
+applicant records. Recruitment data is available only in the individual
+console, with permission- and company-scoped access. Sign-in uses individual accounts;
 "Forgot your password?" emails a reset link. Email links open
 `/admin/accept-invite` and `/admin/reset-password`. Tabs appear only for the
 permissions you hold:
@@ -360,9 +361,9 @@ number. The seeded sample vacancies are drafts, so the site shows none until
 HR publishes real ones. Without `DATABASE_URL` (local only) the pages fall
 back to the samples in `src/data/careers.ts`.
 
-MongoDB import: not needed. The existing Mongo data was confirmed as
-disposable, and the database was filled from the site's own content
-(`npm run db:seed`).
+The configured PostgreSQL database already contains the site's seeded
+companies and vacancies. No historical database import is required; the
+database is seeded from the site's own content with `npm run db:seed`.
 
 ## Changing the schema
 
@@ -396,8 +397,7 @@ pg_restore --clean --no-owner --dbname="$DATABASE_URL_UNPOOLED" sanjeevani-YYYY-
 
 ## Design notes
 
-- UUID keys everywhere; `legacyMongoId` on companies and applications keeps
-  the old MongoDB id for traceable migration.
+- UUID keys everywhere.
 - Company scope: every company-owned row has `companyId`; a user's
   `Membership` grants a role group-wide (`companyId` null) or for one company.
   Authorization filters every query by the user's memberships on the

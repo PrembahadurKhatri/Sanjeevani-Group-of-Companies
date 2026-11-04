@@ -1,37 +1,33 @@
 import { NextResponse } from "next/server";
-import { BusinessModel, ensureInitialBusinesses } from "@/lib/business-model";
-import { connectToDatabase } from "@/lib/mongodb";
+import { prisma } from "@/server/db";
+import { businessDirectoryInclude, businessGroupFor, hasPrismaCode, toBusinessRecord } from "@/server/business-directory";
 import { hasAdminConfiguration, isAdminAuthenticated } from "@/lib/admin-session";
 import { validateBusinessInput } from "@/lib/business-validation";
+import { toCompanyCategory } from "../../../../../prisma/seed-helpers";
+import { getCompanySlug } from "@/data/companyProfiles";
 
 export const dynamic = "force-dynamic";
 
-function authorizationError() {
+async function authorizationError() {
   if (!hasAdminConfiguration()) {
     return NextResponse.json({ message: "Admin access is not configured on this server." }, { status: 503 });
   }
-  if (!isAdminAuthenticated()) {
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ message: "Sign in to manage the business directory." }, { status: 401 });
   }
   return null;
 }
 
-function isDuplicateKeyError(error: unknown) {
-  return typeof error === "object" && error !== null && "code" in error && error.code === 11000;
-}
-
 export async function GET() {
-  const unauthorized = authorizationError();
+  const unauthorized = await authorizationError();
   if (unauthorized) return unauthorized;
 
   try {
-    await connectToDatabase();
-    await ensureInitialBusinesses();
-    const businesses = await BusinessModel.find({})
-      .sort({ order: 1, name: 1 })
-      .select("name category sector description website location published order")
-      .lean();
-    return NextResponse.json({ data: businesses });
+    const businesses = await prisma.company.findMany({
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: businessDirectoryInclude,
+    });
+    return NextResponse.json({ data: businesses.map(toBusinessRecord) });
   } catch (error) {
     console.error("Could not load the admin business directory:", error);
     return NextResponse.json({ message: "Could not load the business directory." }, { status: 503 });
@@ -39,7 +35,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const unauthorized = authorizationError();
+  const unauthorized = await authorizationError();
   if (unauthorized) return unauthorized;
 
   let body: unknown;
@@ -55,11 +51,41 @@ export async function POST(request: Request) {
   }
 
   try {
-    await connectToDatabase();
-    const business = await BusinessModel.create(validated.data);
-    return NextResponse.json({ data: business.toObject() }, { status: 201 });
+    const { name, category, sector, description, website, location, published, order } = validated.data;
+    if (!name || !category || !sector || !description) {
+      return NextResponse.json({ message: "Name, category, sector, and description are required." }, { status: 400 });
+    }
+
+    const group = await prisma.group.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } });
+    if (!group) throw new Error("The PostgreSQL company group has not been seeded.");
+    const sectorGroup = businessGroupFor({ name, category, sector });
+    const matchingSector = sectorGroup
+      ? await prisma.sector.findUnique({ where: { slug: sectorGroup.value }, select: { id: true } })
+      : null;
+    const business = await prisma.company.create({
+      data: {
+        groupId: group.id,
+        sectorId: matchingSector?.id ?? null,
+        name,
+        slug: getCompanySlug(name),
+        category: toCompanyCategory(category),
+        sectorLabel: sector,
+        description,
+        website: website || null,
+        sortOrder: order ?? 0,
+        status: published === false ? "DRAFT" : "PUBLISHED",
+        publishedAt: published === false ? null : new Date(),
+        ...(location ? {
+          locations: {
+            create: { name: "Main office", addressLine: location, isPrimary: true },
+          },
+        } : {}),
+      },
+      include: businessDirectoryInclude,
+    });
+    return NextResponse.json({ data: toBusinessRecord(business) }, { status: 201 });
   } catch (error) {
-    if (isDuplicateKeyError(error)) {
+    if (hasPrismaCode(error, "P2002")) {
       return NextResponse.json({ message: "A business with that name already exists." }, { status: 409 });
     }
     console.error("Could not create a directory business:", error);

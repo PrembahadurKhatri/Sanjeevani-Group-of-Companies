@@ -134,6 +134,12 @@
 /* ---------- Newsroom: load more, listing pages, articles ---------- */
 .nr-load-more { min-height: 46px; margin: 28px auto 0; padding: 0 24px; display: flex; align-items: center; gap: 8px; border: 1px solid #c9d8bd; border-radius: 999px; background: transparent; color: #2d5a1a; font: 600 14px/1 var(--font-body); cursor: pointer; transition: background .2s, color .2s; }
 .nr-load-more:hover { background: #3a7020; color: #fff; }
+.newsroom-pagination { margin: 28px auto 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+.newsroom-pagination button { min-width: 40px; min-height: 40px; padding: 0 12px; border: 1px solid #c9d8bd; border-radius: 999px; background: #fff; color: #2d5a1a; font: 600 13px/1 var(--font-body); cursor: pointer; }
+.newsroom-pagination button:hover:not(:disabled), .newsroom-pagination button[aria-current="page"] { border-color: #3a7020; background: #3a7020; color: #fff; }
+.newsroom-pagination button:disabled { opacity: .45; cursor: not-allowed; }
+.newsroom-pagination-pages, .newsroom-pagination-page { display: inline-flex; align-items: center; gap: 6px; }
+.newsroom-pagination-page > span { color: #71806f; }
 .newsroom-jump a[aria-current="page"] { background: #3a7020; color: #fff; }
 .newsroom-card-title-link { color: inherit; text-decoration: none; }
 .newsroom-card-title-link:hover { text-decoration: underline; }
@@ -159,6 +165,8 @@
 :root[data-theme="dark"] .nr-article-head h1, :root[data-theme="dark"] .nr-article-head h2, :root[data-theme="dark"] .nr-article-body { color: #e6ede1; }
 :root[data-theme="dark"] .nr-article-lead, :root[data-theme="dark"] .nr-breadcrumb { color: #a4b09f; }
 :root[data-theme="dark"] .nr-load-more { border-color: #2a3428; color: #c4e58a; }
+:root[data-theme="dark"] .newsroom-pagination button { border-color: #2a3428; background: var(--card); color: #c4e58a; }
+:root[data-theme="dark"] .newsroom-pagination button:hover:not(:disabled), :root[data-theme="dark"] .newsroom-pagination button[aria-current="page"] { border-color: #3a7020; background: #3a7020; color: #fff; }
 
 /* =====================================================================
    Company homepage layout below the hero (.cxp-*): introduction card with

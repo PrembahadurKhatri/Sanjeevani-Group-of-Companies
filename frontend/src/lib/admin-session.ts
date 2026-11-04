@@ -29,13 +29,13 @@ function signature(expiresAt: string, secret: string) {
   return createHmac("sha256", secret).update(expiresAt).digest("hex");
 }
 
-export function createAdminSession() {
+export async function createAdminSession() {
   const configuration = getAdminConfiguration();
   if (!configuration) throw new Error("Admin authentication is not configured.");
 
   const expiresAt = String(Date.now() + sessionDurationSeconds * 1000);
   const value = `${expiresAt}.${signature(expiresAt, configuration.secret)}`;
-  cookies().set(cookieName, value, {
+  (await cookies()).set(cookieName, value, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -44,8 +44,8 @@ export function createAdminSession() {
   });
 }
 
-export function clearAdminSession() {
-  cookies().set(cookieName, "", {
+export async function clearAdminSession() {
+  (await cookies()).set(cookieName, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -54,9 +54,9 @@ export function clearAdminSession() {
   });
 }
 
-export function isAdminAuthenticated() {
+export async function isAdminAuthenticated() {
   const configuration = getAdminConfiguration();
-  const value = cookies().get(cookieName)?.value;
+  const value = (await cookies()).get(cookieName)?.value;
   if (!configuration || !value) return false;
 
   const [expiresAt, providedSignature] = value.split(".");

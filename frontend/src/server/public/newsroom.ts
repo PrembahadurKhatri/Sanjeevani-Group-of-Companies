@@ -4,11 +4,9 @@ import {
   companyNotices, galleryPhotos, galleryVideos, latestEvents, latestNews, latestPressReleases, youtubeVideos,
   type CompanyNotice, type GalleryPhoto, type GalleryVideo, type NewsroomStory,
 } from "@/data/newsroom";
+import { canUseBundledSamples } from "@/server/public/sample-content";
 
-// The public Newsroom and Gallery read what is published in the admin. While
-// nothing of a kind has been published yet, that kind keeps showing the
-// site's existing bundled content (src/data/newsroom.ts), so pages never go
-// blank. Drafts are never read.
+// The public Newsroom and Gallery read only published database content.
 
 export type Story = NewsroomStory & { href?: string };
 
@@ -50,6 +48,17 @@ const BUNDLED: NewsroomData = {
   youtube: youtubeVideos,
   photos: galleryPhotos,
   galleryVideos,
+};
+
+const EMPTY: NewsroomData = {
+  noticeStories: [],
+  pressReleases: [],
+  news: [],
+  events: [],
+  notices: [],
+  youtube: [],
+  photos: [],
+  galleryVideos: [],
 };
 
 const image = { select: { url: true, altText: true } } as const;
@@ -104,16 +113,13 @@ async function fromDatabase(): Promise<NewsroomData> {
 }
 
 export async function loadNewsroom(): Promise<NewsroomData> {
-  if (!isDatabaseConfigured()) return BUNDLED;
+  const databaseConfigured = isDatabaseConfigured();
+  if (!databaseConfigured) return canUseBundledSamples(databaseConfigured) ? BUNDLED : EMPTY;
   try {
-    const db = await fromDatabase();
-    // Per kind: published records, or the bundled content until there are any.
-    return Object.fromEntries(
-      (Object.keys(BUNDLED) as (keyof NewsroomData)[]).map((key) => [key, db[key].length ? db[key] : BUNDLED[key]]),
-    ) as NewsroomData;
+    return await fromDatabase();
   } catch (error) {
     console.error("Could not load the newsroom:", error instanceof Error ? error.message.split("\n")[0] : error);
-    return BUNDLED;
+    return EMPTY;
   }
 }
 

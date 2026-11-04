@@ -1,5 +1,6 @@
 "use client";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { api, formatDate, hasPermission, label, type Me } from "@/components/admin/api";
 import { LoadingBlock, LoadingInline } from "@/components/admin/Loading";
 import { type Field, FieldInputs, fromItem, type Lookups, toInput } from "@/components/admin/FieldForm";
@@ -172,7 +173,7 @@ export function CompanyNews({ me, companyId }: { me: Me; companyId: string }) {
   const available = rows?.filter((r) => r.companyId === null) ?? [];
   return (
     <div className="adm-company-items">
-      <p className="adm-muted">Articles are written and published in <a className="admin-link-button" href="/admin?tab=newsroom">Newsroom</a>. Link existing ones here; published ones appear in this company&rsquo;s News &amp; updates.</p>
+      <p className="adm-muted">Articles are written and published in <Link className="admin-link-button" href="/admin?tab=newsroom">Newsroom</Link>. Link existing ones here; published ones appear in this company&rsquo;s News &amp; updates.</p>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
       {notice && <p className="admin-message admin-notice" role="status">{notice}</p>}
       {rows === null ? <LoadingBlock label="Loading articles" rows={3} /> : (
@@ -221,7 +222,7 @@ export function CompanyCareers({ me, companyId }: { me: Me; companyId: string })
   if (!hasPermission(me, "vacancy.read")) return <p className="adm-muted">Vacancies are managed by HR under Recruitment → Vacancies.</p>;
   return (
     <div className="adm-company-items">
-      <p className="adm-muted">Published vacancies appear automatically in this company&rsquo;s Careers section. <a className="admin-link-button" href="/admin?tab=vacancies">Manage vacancies</a></p>
+      <p className="adm-muted">Published vacancies appear automatically in this company&rsquo;s Careers section. <Link className="admin-link-button" href="/admin?tab=vacancies">Manage vacancies</Link></p>
       {error && <p className="admin-message admin-error" role="alert">{error}</p>}
       {rows === null ? <LoadingBlock label="Loading vacancies" rows={3} /> : rows.length === 0 ? <p className="admin-empty">No vacancies for this company yet.</p> : (
         <table className="admin-table">

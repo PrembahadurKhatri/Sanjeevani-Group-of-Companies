@@ -27,6 +27,8 @@ import {
   slugify,
   toCompanyCategory,
   toEmploymentType,
+  vacancySeedStatus,
+  vacancySeedUpdate,
 } from "./seed-helpers";
 
 const prisma = new PrismaClient();
@@ -169,7 +171,7 @@ async function seedRecruitment(companyIds: Map<string, string>) {
     const age = parseAgeRange(vacancy.ageRange);
     await prisma.vacancy.upsert({
       where: { slug: vacancy.id },
-      update: {},
+      update: vacancySeedUpdate(vacancy.sample),
       create: {
         slug: vacancy.id,
         referenceCode: `SG-V-${String(index + 1).padStart(4, "0")}`,
@@ -189,7 +191,7 @@ async function seedRecruitment(companyIds: Map<string, string>) {
         minAge: age.min,
         maxAge: age.max,
         // Sample vacancies stay DRAFT until HR replaces them with real ones.
-        status: vacancy.sample ? "DRAFT" : "PUBLISHED",
+        status: vacancySeedStatus(vacancy.sample),
         publishedAt: vacancy.sample ? null : new Date(),
       },
     });

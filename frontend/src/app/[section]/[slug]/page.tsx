@@ -46,7 +46,8 @@ export function generateStaticParams() {
   ];
 }
 
-export async function generateMetadata({ params }: { params: { section: string; slug: string } }) {
+export async function generateMetadata(props: { params: Promise<{ section: string; slug: string }> }) {
+  const params = await props.params;
   if (params.section === "newsroom") return { title: `${NEWSROOM_PAGES[params.slug] ?? "Newsroom"} | Sanjeevani Group of Companies` };
   if (params.section === "businesses" && isDatabaseConfigured()) {
     const meta = await companyMetadata(params.slug).catch(() => null);
@@ -66,7 +67,8 @@ export async function generateMetadata({ params }: { params: { section: string; 
 
 export const revalidate = 60;
 
-export default async function SubPage({ params }: { params: { section: string; slug: string } }) {
+export default async function SubPage(props: { params: Promise<{ section: string; slug: string }> }) {
+  const params = await props.params;
   if (params.section === "businesses") {
     const profile = await companyPage(params.slug);
     if (profile === "missing") notFound();

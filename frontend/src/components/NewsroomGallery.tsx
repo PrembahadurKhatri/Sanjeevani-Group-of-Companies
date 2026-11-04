@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
-import { galleryPhotos as bundledPhotos, galleryVideos as bundledVideos, getYouTubeId, type GalleryPhoto, type GalleryVideo } from "@/data/newsroom";
+import { getYouTubeId, type GalleryPhoto, type GalleryVideo } from "@/data/newsroom";
+import NewsroomPagination from "@/components/NewsroomPagination";
 
 type Tab = "photos" | "videos";
 
@@ -16,24 +17,25 @@ const remote = (src: string) => /^https?:\/\//.test(src);
 // shows that many items first, with a Show more button adding that many again.
 export default function NewsroomGallery({
   renderYouTube,
-  photos: galleryPhotos = bundledPhotos,
-  videos: galleryVideos = bundledVideos,
+  photos: galleryPhotos,
+  videos: galleryVideos,
   pageSize,
   heading = "Gallery",
   idPrefix = "gallery",
   photosOnly = false,
 }: {
   renderYouTube: (id: string, title: string, thumbnail?: string) => ReactNode;
-  photos?: GalleryPhoto[];
-  videos?: GalleryVideo[];
+  photos: GalleryPhoto[];
+  videos: GalleryVideo[];
   pageSize?: number;
   heading?: string;
   idPrefix?: string;
   photosOnly?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>("photos");
-  const [shownPhotos, setShownPhotos] = useState(pageSize ?? Infinity);
-  const [shownVideos, setShownVideos] = useState(pageSize ?? Infinity);
+  const effectivePageSize = pageSize ?? Math.max(galleryPhotos.length, galleryVideos.length, 1);
+  const [photoPage, setPhotoPage] = useState(1);
+  const [videoPage, setVideoPage] = useState(1);
   const [open, setOpen] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const lastTrigger = useRef<HTMLButtonElement | null>(null);
@@ -46,6 +48,7 @@ export default function NewsroomGallery({
   }, [open]);
 
   function step(delta: number) {
+    if (galleryPhotos.length === 0) return;
     setOpen((current) => (current === null ? current : (current + delta + galleryPhotos.length) % galleryPhotos.length));
   }
 
@@ -62,8 +65,12 @@ export default function NewsroomGallery({
   // Every fifth photo spans two columns; the last one does too when that is what
   // it takes to fill the final row of the 3-column grid.
   const baseWide = (index: number) => index % 5 === 0;
-  const visibleCount = Math.min(galleryPhotos.length, shownPhotos);
-  const wideCount = galleryPhotos.slice(0, visibleCount).filter((_, index) => baseWide(index)).length;
+  const photoStart = (photoPage - 1) * effectivePageSize;
+  const videoStart = (videoPage - 1) * effectivePageSize;
+  const visiblePhotos = galleryPhotos.slice(photoStart, photoStart + effectivePageSize);
+  const visibleVideos = galleryVideos.slice(videoStart, videoStart + effectivePageSize);
+  const visibleCount = visiblePhotos.length;
+  const wideCount = visiblePhotos.filter((_, index) => baseWide(index)).length;
   const isWide = (index: number) =>
     baseWide(index) || (index === visibleCount - 1 && (visibleCount + wideCount) % 3 !== 0);
 
@@ -95,12 +102,12 @@ export default function NewsroomGallery({
         {galleryPhotos.length ? (
           <>
           <ul className="nr-photos">
-            {galleryPhotos.slice(0, shownPhotos).map((item, index) => (
+            {visiblePhotos.map((item, index) => (
               <li key={`${item.src}-${index}`} className={isWide(index) ? "is-wide" : undefined}>
                 <button
                   type="button"
                   className="nr-photo"
-                  onClick={(event) => { lastTrigger.current = event.currentTarget; setOpen(index); }}
+                  onClick={(event) => { lastTrigger.current = event.currentTarget; setOpen(photoStart + index); }}
                   aria-label={`Open photo: ${item.caption}`}
                 >
                   <Image src={item.src} alt={item.alt} fill sizes="(max-width: 640px) 100vw, (max-width: 1050px) 50vw, 33vw" unoptimized={remote(item.src)} />
@@ -109,11 +116,7 @@ export default function NewsroomGallery({
               </li>
             ))}
           </ul>
-          {galleryPhotos.length > shownPhotos && (
-            <button type="button" className="nr-load-more" onClick={() => setShownPhotos((n) => n + (pageSize ?? n))}>
-              Show more photos <span className="num">({galleryPhotos.length - shownPhotos} more)</span>
-            </button>
-          )}
+          <NewsroomPagination page={photoPage} totalItems={galleryPhotos.length} pageSize={effectivePageSize} onPageChange={setPhotoPage} label="Photos" />
           </>
         ) : (
           <p className="newsroom-empty">Photos from across the group will appear here soon.</p>
@@ -124,7 +127,7 @@ export default function NewsroomGallery({
         {galleryVideos.length ? (
           <>
           <ul className="nr-videos">
-            {galleryVideos.slice(0, shownVideos).map((video, index) => {
+            {visibleVideos.map((video, index) => {
               if (video.kind === "file") {
                 return (
                   <li key={`${video.src}-${index}`}>
@@ -146,11 +149,7 @@ export default function NewsroomGallery({
               );
             })}
           </ul>
-          {galleryVideos.length > shownVideos && (
-            <button type="button" className="nr-load-more" onClick={() => setShownVideos((n) => n + (pageSize ?? n))}>
-              Show more videos <span className="num">({galleryVideos.length - shownVideos} more)</span>
-            </button>
-          )}
+          <NewsroomPagination page={videoPage} totalItems={galleryVideos.length} pageSize={effectivePageSize} onPageChange={setVideoPage} label="Videos" />
           </>
         ) : (
           <p className="newsroom-empty">Videos from across the group will appear here soon.</p>

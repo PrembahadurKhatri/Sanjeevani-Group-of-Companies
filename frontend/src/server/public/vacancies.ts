@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { vacancies as sampleVacancies, type Vacancy } from "@/data/careers";
 import { isDatabaseConfigured } from "@/server/db";
+import { canUseBundledSamples } from "@/server/public/sample-content";
 import { listPublicVacancies } from "@/server/recruitment/vacancies";
 import { formatKathmandu } from "@/server/time";
 
@@ -48,7 +49,8 @@ export function toSiteVacancy(v: PublicVacancy): Vacancy | null {
 }
 
 export async function loadSiteVacancies(): Promise<Vacancy[]> {
-  if (!isDatabaseConfigured()) return sampleVacancies;
+  const databaseConfigured = isDatabaseConfigured();
+  if (!databaseConfigured) return canUseBundledSamples(databaseConfigured) ? sampleVacancies : [];
   try {
     const rows = await listPublicVacancies();
     return rows.filter((v) => v.acceptingApplications).map(toSiteVacancy).filter((v): v is Vacancy => v !== null);

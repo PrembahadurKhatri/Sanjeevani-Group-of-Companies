@@ -29,7 +29,8 @@ export function generateStaticParams() {
   return sectionSlugs.map((section) => ({ section }));
 }
 
-export function generateMetadata({ params }: { params: { section: string } }) {
+export async function generateMetadata(props: { params: Promise<{ section: string }> }) {
+  const params = await props.params;
   const titles: Record<string, string> = {
     "our-story": "Our story",
     "about-us": "About us",
@@ -59,11 +60,12 @@ export function generateMetadata({ params }: { params: { section: string } }) {
 // Re-render at most once a minute so vacancy counts follow what HR publishes.
 export const revalidate = 60;
 
-export default async function GroupSectionPage({
-  params,
-}: {
-  params: { section: string };
-}) {
+export default async function GroupSectionPage(
+  props: {
+    params: Promise<{ section: string }>;
+  }
+) {
+  const params = await props.params;
   if (!sectionSlugs.includes(params.section)) notFound();
   const siteVacancies = params.section === "careers" ? await loadSiteVacancies() : undefined;
   const newsroom = params.section === "newsroom" || params.section === "gallery" ? await loadNewsroom() : undefined;

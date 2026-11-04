@@ -41,18 +41,18 @@ export async function createSession(userId: string, meta: { ipHash?: string | nu
       userAgent: meta.userAgent?.slice(0, 300) ?? null,
     },
   });
-  cookies().set(SESSION_COOKIE, token, cookieOptions(expiresAt));
+  (await cookies()).set(SESSION_COOKIE, token, cookieOptions(expiresAt));
   return session;
 }
 
-export function clearSessionCookie() {
-  cookies().set(SESSION_COOKIE, "", cookieOptions(new Date(0)));
+export async function clearSessionCookie() {
+  (await cookies()).set(SESSION_COOKIE, "", cookieOptions(new Date(0)));
 }
 
 // Resolves the signed-in user from the cookie, or null. Loads memberships
 // with their role permissions so authorization needs no further queries.
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const token = cookies().get(SESSION_COOKIE)?.value;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
   const session = await prisma.session.findUnique({

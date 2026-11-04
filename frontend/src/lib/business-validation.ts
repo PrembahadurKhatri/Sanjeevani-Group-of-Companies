@@ -1,11 +1,17 @@
-import type { BusinessRecord } from "@/lib/business-model";
+import type { Business, BusinessCategory } from "@/data/businesses";
 
-const categories = ["healthcare", "education", "agriculture", "other"];
+export type BusinessRecord = Omit<Business, "_id">;
+
+const categories = ["healthcare", "education", "agriculture", "other"] as const satisfies readonly BusinessCategory[];
 const fields = ["name", "category", "sector", "description", "website", "location", "published", "order"];
 
 type ValidationResult =
   | { success: true; data: Partial<BusinessRecord> }
   | { success: false; message: string };
+
+function isBusinessCategory(value: unknown): value is BusinessCategory {
+  return typeof value === "string" && categories.some((category) => category === value);
+}
 
 export function validateBusinessInput(input: unknown, partial = false): ValidationResult {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
@@ -30,7 +36,7 @@ export function validateBusinessInput(input: unknown, partial = false): Validati
     data.name = record.name.trim();
   }
   if ("category" in record) {
-    if (typeof record.category !== "string" || !categories.includes(record.category)) {
+    if (!isBusinessCategory(record.category)) {
       return { success: false, message: "Choose a valid business category." };
     }
     data.category = record.category;

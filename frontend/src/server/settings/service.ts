@@ -26,7 +26,7 @@ export type SettingKey = keyof typeof SETTINGS;
 
 // { key: value | null } — null removes the setting (the site falls back to its default).
 export const settingsUpdateSchema = z
-  .record(z.unknown())
+  .record(z.string(), z.unknown())
   .superRefine((value, ctx) => {
     for (const [key, raw] of Object.entries(value)) {
       if (!(key in SETTINGS)) { ctx.addIssue({ code: "custom", path: [key], message: `Unknown setting "${key}".` }); continue; }

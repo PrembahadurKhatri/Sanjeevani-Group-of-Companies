@@ -9,6 +9,8 @@ import {
   slugify,
   toCompanyCategory,
   toEmploymentType,
+  vacancySeedStatus,
+  vacancySeedUpdate,
 } from "../prisma/seed-helpers";
 
 describe("seed helpers", () => {
@@ -23,6 +25,12 @@ describe("seed helpers", () => {
     assert.equal(toEmploymentType("part time"), "PART_TIME");
     assert.equal(toEmploymentType("Internship"), "INTERNSHIP");
     assert.equal(toEmploymentType("something else"), "FULL_TIME");
+  });
+
+  it("keeps sample vacancies as drafts when seed runs again", () => {
+    assert.equal(vacancySeedStatus(true), "DRAFT");
+    assert.deepEqual(vacancySeedUpdate(true), { status: "DRAFT", publishedAt: null });
+    assert.deepEqual(vacancySeedUpdate(false), {});
   });
 
   it("parses age ranges and ignores invalid ones", () => {

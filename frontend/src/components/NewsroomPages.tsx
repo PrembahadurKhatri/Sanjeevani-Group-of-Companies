@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { type ReactNode, useEffect, useState } from "react";
 import NewsroomGallery from "@/components/NewsroomGallery";
+import NewsroomPagination from "@/components/NewsroomPagination";
 import type { Story } from "@/server/public/newsroom";
 import type { CompanyNotice } from "@/data/newsroom";
 import { getBusinessLogo } from "@/data/businessLogos";
@@ -15,7 +16,7 @@ import type { CompanyOfferingData } from "@/server/public/company-profile";
 // card and layout styles.
 
 const remote = (src: string) => /^https?:\/\//.test(src);
-// Newsroom lists show 6 items, then 6 more each time Show more is pressed.
+// Newsroom lists use six items per page.
 export const NEWSROOM_PAGE = 6;
 const PAGE = NEWSROOM_PAGE;
 
@@ -94,15 +95,12 @@ export function NewsroomCards({ stories }: { stories: Story[] }) {
 
 // A group of story cards on the Newsroom page, 6 at a time.
 export function PagedCards({ stories }: { stories: Story[] }) {
-  const [shown, setShown] = useState(PAGE);
+  const [page, setPage] = useState(1);
+  const start = (page - 1) * PAGE;
   return (
     <>
-      <NewsroomCards stories={stories.slice(0, shown)} />
-      {stories.length > shown && (
-        <button type="button" className="nr-load-more" onClick={() => setShown((n) => n + PAGE)}>
-          Show more <span className="num">({stories.length - shown} more)</span>
-        </button>
-      )}
+      <NewsroomCards stories={stories.slice(start, start + PAGE)} />
+      <NewsroomPagination page={page} totalItems={stories.length} pageSize={PAGE} onPageChange={setPage} label="Newsroom stories" />
     </>
   );
 }
@@ -148,7 +146,8 @@ const KIND_LINKS = [
 ];
 
 export function NewsroomListing({ kind, title, stories, notices }: { kind: string; title: string; stories: Story[]; notices?: CompanyNotice[] }) {
-  const [shown, setShown] = useState(PAGE);
+  const [page, setPage] = useState(1);
+  const start = (page - 1) * PAGE;
   return (
     <section className="newsroom">
       <div className="reference-wrap">
@@ -160,12 +159,8 @@ export function NewsroomListing({ kind, title, stories, notices }: { kind: strin
           </div>
           {stories.length ? (
             <>
-              {notices ? <NoticeCards notices={notices.slice(0, shown)} /> : <NewsroomCards stories={stories.slice(0, shown)} />}
-              {stories.length > shown && (
-                <button type="button" className="nr-load-more" onClick={() => setShown((n) => n + PAGE)}>
-                  Show more <span className="num">({stories.length - shown} more)</span>
-                </button>
-              )}
+              {notices ? <NoticeCards notices={notices.slice(start, start + PAGE)} start={start} /> : <NewsroomCards stories={stories.slice(start, start + PAGE)} />}
+              <NewsroomPagination page={page} totalItems={stories.length} pageSize={PAGE} onPageChange={setPage} label={title} />
             </>
           ) : (
             <p className="newsroom-empty">There is nothing published here yet. Please check back soon.</p>

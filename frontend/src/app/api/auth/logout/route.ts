@@ -11,6 +11,6 @@ export const POST = handle(async (request: Request) => {
   assertSameOrigin(request);
   const user = await getSessionUser();
   if (user) await logout(user, requestMeta(request));
-  else clearSessionCookie();
+  else await clearSessionCookie();
   return NextResponse.json({ ok: true });
 });

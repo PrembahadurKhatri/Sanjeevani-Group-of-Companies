@@ -59,7 +59,7 @@ export async function login(input: { email: string; password: string }, meta: Re
 
 export async function logout(user: SessionUser, meta: RequestMeta) {
   await revokeSession(user.sessionId);
-  clearSessionCookie();
+  await clearSessionCookie();
   await recordAudit({ actorId: user.id, action: "auth.logout", entityType: "User", entityId: user.id, ipHash: hashIdentifier(meta.ip), userAgent: meta.userAgent });
 }
 

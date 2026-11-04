@@ -13,7 +13,7 @@ export async function GET() {
   if (!hasAdminConfiguration()) {
     return NextResponse.json({ message: "Admin access is not configured on this server." }, { status: 503 });
   }
-  const authenticated = isAdminAuthenticated();
+  const authenticated = await isAdminAuthenticated();
   return NextResponse.json({ authenticated }, { status: authenticated ? 200 : 401 });
 }
 
@@ -33,11 +33,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "The password is incorrect." }, { status: 401 });
   }
 
-  createAdminSession();
+  await createAdminSession();
   return NextResponse.json({ authenticated: true });
 }
 
 export async function DELETE() {
-  clearAdminSession();
+  await clearAdminSession();
   return NextResponse.json({ authenticated: false });
 }

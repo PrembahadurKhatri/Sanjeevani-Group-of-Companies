@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import AdminApplications from "@/components/AdminApplications";
 import type { Business, BusinessCategory } from "@/data/businesses";
 
 type BusinessForm = {
@@ -291,7 +290,11 @@ export default function AdminPage() {
           </div>
         ) : <p className="admin-empty">No businesses have been added yet.</p>}
       </section>
-      <AdminApplications />
+      <section className="admin-content admin-applications">
+        <h2>Job applications</h2>
+        <p>Applicant records are available in the individual-admin console, where access is permission- and company-scoped.</p>
+        <Link className="admin-primary-button" href="/admin">Open secure admin console</Link>
+      </section>
     </main>
   );
 }

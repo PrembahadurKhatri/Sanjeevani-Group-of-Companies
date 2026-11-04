@@ -44,11 +44,11 @@ export function errorResponse(error: unknown) {
   return NextResponse.json({ error: { code: "server_error", message: "Something went wrong. Please try again." } }, { status: 500 });
 }
 
-// Wraps a route handler so thrown HttpErrors / ZodErrors become JSON responses.
-export function handle<Args extends unknown[]>(fn: (...args: Args) => Promise<Response>) {
-  return async (...args: Args) => {
+// Resolve Next's async route params and turn expected errors into JSON responses.
+export function handle<P>(fn: (request: Request, context: { params: P }) => Promise<Response>) {
+  return async (request: Request, context: { params: Promise<P> }) => {
     try {
-      return await fn(...args);
+      return await fn(request, { params: await context.params });
     } catch (error) {
       return errorResponse(error);
     }

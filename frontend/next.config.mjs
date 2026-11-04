@@ -20,11 +20,9 @@ const privateHeaders = [
 const nextConfig = {
   distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next-build",
   poweredByHeader: false,
-  experimental: {
-    // Native password hashing and the SMTP client: load them from node_modules
-    // at runtime instead of bundling them.
-    serverComponentsExternalPackages: ["@node-rs/argon2", "nodemailer"],
-  },
+  // Native password hashing and SMTP load from node_modules at runtime.
+  serverExternalPackages: ["@node-rs/argon2", "nodemailer"],
+  outputFileTracingRoot: process.cwd(),
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

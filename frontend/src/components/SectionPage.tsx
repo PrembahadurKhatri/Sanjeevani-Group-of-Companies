@@ -24,10 +24,11 @@ import NewsroomNavMenu from "@/components/NewsroomNavMenu";
 import ScrollReveal from "@/components/ScrollReveal";
 import CompanyProfilePage from "@/components/CompanyProfilePage";
 import { CompanyOfferingPage, NEWSROOM_PAGE, NewsArticle, NewsroomJump, NewsroomListing, NoticeCards, PagedCards } from "@/components/NewsroomPages";
+import NewsroomPagination from "@/components/NewsroomPagination";
 import type { CompanyOfferingData, CompanyProfileData } from "@/server/public/company-profile";
 import type { ArticleData, NewsroomData } from "@/server/public/newsroom";
 import type { CommunityData } from "@/server/public/community";
-import { companyNotices, galleryPhotos, galleryVideos, getYouTubeId, latestEvents, latestNews, latestPressReleases, youtubeVideos } from "@/data/newsroom";
+import { getYouTubeId } from "@/data/newsroom";
 import SocialLinks from "@/components/SocialLinks";
 import NepalNetworkMap from "@/components/NepalNetworkMap";
 import { faqs } from "@/data/faqs";
@@ -41,6 +42,16 @@ const navigation = [
   { label: "Careers", href: "/careers" },
   { label: "Contact", href: "/contact" },
 ];
+
+const mobilePageHeroImages: Record<string, string> = {
+  "about-us": "/mobilehero/aboutus.png",
+  "our-story": "/mobilehero/aboutus.png",
+  businesses: "/mobilehero/bus.png",
+  community: "/mobilehero/community.png",
+  "mission-vision-values": "/mobilehero/missionhero.png",
+  newsroom: "/mobilehero/newss.png",
+  gallery: "/mobilehero/newss.png",
+};
 
 
 // TODO: add each foundation's real logo (in /public), photo, description and website.
@@ -249,7 +260,7 @@ const pageContent: Record<string, {
     intro: "Explore the companies and sectors that make up Sanjeevani Group.",
     lead: "18 companies. Four areas of work.",
     paragraphs: [
-      "Browse the directory by company name or first letter. Search results reflect the latest published directory when MongoDB is connected.",
+      "Browse the directory by company name or first letter. Search results reflect the latest published directory from PostgreSQL.",
     ],
   },
   newsroom: {
@@ -436,11 +447,9 @@ const coreValues = [
   },
 ];
 
-// Newsroom / Gallery content (published in the admin, or the bundled samples
-// until something is published); passed in by the server page.
-const BUNDLED_NEWSROOM: NewsroomData = {
-  noticeStories: [], pressReleases: latestPressReleases, news: latestNews, events: latestEvents, notices: companyNotices,
-  youtube: youtubeVideos, photos: galleryPhotos, galleryVideos,
+const EMPTY_NEWSROOM: NewsroomData = {
+  noticeStories: [], pressReleases: [], news: [], events: [], notices: [],
+  youtube: [], photos: [], galleryVideos: [],
 };
 
 type SectionPageProps = {
@@ -455,11 +464,12 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
   const foundations = community?.programs ?? communityFoundations;
   const communityTiles = community?.gallery ?? communityGallery;
   const page = pageContent[section === "our-story" ? "about-us" : section];
-  const nr = newsroom ?? BUNDLED_NEWSROOM;
+  const nr = newsroom ?? EMPTY_NEWSROOM;
   // Pages with the scroll and hero entrance animations.
   const animated = ["newsroom", "gallery", "community", "careers"].includes(section);
   const storyLayout = section === "our-story" || section === "about-us";
   const leadershipLayout = section === "leadership" || section === "chairman";
+  const mobilePageHeroImage = mobilePageHeroImages[section];
   const photoHero = (section === "mission-vision-values" || section === "community" || section === "newsroom" || section === "gallery" || leadershipLayout || storyLayout) && !leaderSlug;
   // Pages whose hero photo runs under a transparent header that turns solid on scroll.
   const overlayHeader = (photoHero || section === "businesses" || section === "careers" || Boolean(leaderSlug)) && !offering;
@@ -476,9 +486,10 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
   const [careerType, setCareerType] = useState("All areas");
   const [headerScrolled, setHeaderScrolled] = useState(false);
   const [valuesTab, setValuesTab] = useState<"core" | "mudra">("core");
-  // Newsroom: YouTube videos and notices, 6 at a time.
-  const [shownVideos, setShownVideos] = useState(NEWSROOM_PAGE);
-  const [shownNotices, setShownNotices] = useState(NEWSROOM_PAGE);
+  const [youtubePage, setYoutubePage] = useState(1);
+  const [noticesPage, setNoticesPage] = useState(1);
+  const youtubeStart = (youtubePage - 1) * NEWSROOM_PAGE;
+  const noticesStart = (noticesPage - 1) * NEWSROOM_PAGE;
 
   useEffect(() => {
     if (!leadershipLayout && !storyLayout) return;
@@ -630,18 +641,18 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
 
   return (
     <>
-      <header className={`reference-header${overlayHeader ? (headerScrolled ? " is-scrolled" : " is-overlay") : ""}`}>
+      <header className={`reference-header${overlayHeader ? (headerScrolled ? " is-scrolled" : " is-overlay") : ""}${menuOpen ? " is-menu-open" : ""}`}>
         <div className="reference-wrap header-inner">
           <Brand />
           <nav className={`reference-nav${menuOpen ? " is-open" : ""}`} aria-label="Main navigation">
             {navigation.map((item) => item.label === "About us" ? (
-              <AboutNavMenu key={item.href} isCurrent={["about-us", "our-story", "mission-vision-values", "leadership", "chairman", "team"].includes(section)} />
+              <AboutNavMenu key={item.href} isCurrent={["about-us", "our-story", "mission-vision-values", "leadership", "chairman", "team"].includes(section)} onNavigate={() => setMenuOpen(false)} />
             ) : item.label === "Business" ? (
-              <BusinessNavMenu businesses={businesses} key={item.href} isCurrent={section === "businesses"} />
+              <BusinessNavMenu businesses={businesses} key={item.href} isCurrent={section === "businesses"} onNavigate={() => setMenuOpen(false)} />
             ) : item.label === "Newsroom" ? (
-              <NewsroomNavMenu key={item.href} isCurrent={section === "newsroom" || section === "gallery"} />
+              <NewsroomNavMenu key={item.href} isCurrent={section === "newsroom" || section === "gallery"} onNavigate={() => setMenuOpen(false)} />
             ) : item.label === "Careers" ? (
-              <CareersNavMenu businesses={businesses} key={item.href} isCurrent={section === "careers"} />
+              <CareersNavMenu businesses={businesses} key={item.href} isCurrent={section === "careers"} onNavigate={() => setMenuOpen(false)} />
             ) : (
               <Link className={item.href === `/${section}` ? "is-current" : ""} href={item.href} key={item.href} onClick={() => setMenuOpen(false)}>{item.label}</Link>
             ))}
@@ -674,9 +685,16 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
           <LegalDocument kind="faq" title={page.title} intro={page.intro} lead={page.lead} paragraphs={faqs.map((item) => item.answer)} titles={faqs.map((item) => item.question)} />
         ) : (
         <>
-        <section className={`section-page-hero${["about-us", "our-story", "mission-vision-values", "leadership", "team", "businesses", "newsroom", "reviews", "gallery", "community", "contact"].includes(section) ? " section-page-hero-clean" : ""}${section === "contact" ? " contact-page-hero" : ""}${section === "careers" ? " career-page-hero" : ""}${section === "businesses" ? " businesses-page-hero" : ""}${photoHero ? " mission-page-hero" : ""}${storyLayout ? " story-page-hero" : ""}${storyLayout ? " about-page-hero" : ""}${section === "about-us" ? " about-us-hero" : ""}${leadershipLayout ? " leadership-page-hero" : ""}${section === "leadership" ? " leadership-team-hero" : ""}${section === "mission-vision-values" ? " mvv-page-hero" : ""}${section === "community" ? " community-page-hero" : ""}${section === "newsroom" || section === "gallery" ? " newsroom-page-hero" : ""}`}>
+        <section className={`section-page-hero${["about-us", "our-story", "mission-vision-values", "leadership", "team", "businesses", "newsroom", "reviews", "gallery", "community", "contact"].includes(section) ? " section-page-hero-clean" : ""}${section === "contact" ? " contact-page-hero" : ""}${section === "careers" ? " career-page-hero" : ""}${section === "businesses" ? " businesses-page-hero" : ""}${photoHero ? " mission-page-hero" : ""}${storyLayout ? " story-page-hero" : ""}${storyLayout ? " about-page-hero" : ""}${section === "about-us" ? " about-us-hero" : ""}${leadershipLayout ? " leadership-page-hero" : ""}${section === "leadership" ? " leadership-team-hero" : ""}${section === "mission-vision-values" ? " mvv-page-hero" : ""}${section === "community" ? " community-page-hero" : ""}${section === "newsroom" || section === "gallery" ? " newsroom-page-hero" : ""}${mobilePageHeroImage ? " has-mobile-page-hero" : ""}`}>
           <div className="hero-grid" aria-hidden="true" />
           <div className="section-page-orbit" aria-hidden="true" />
+          {mobilePageHeroImage && (
+            <div
+              className="mobile-page-hero-image"
+              style={{ "--mobile-page-hero-image": `url("${mobilePageHeroImage}")` } as CSSProperties}
+              aria-hidden="true"
+            />
+          )}
           {section === "businesses" && <div className="businesses-hero-art" aria-hidden="true"><span>Together<br />for a better<br />tomorrow</span></div>}
           {section === "careers" && <div className="career-hero-art" aria-hidden="true" />}
           <div className="reference-wrap section-page-hero-content">
@@ -876,12 +894,8 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                   <h2 id="notices-title">Notices</h2>
                   <span>{nr.notices.length} {nr.notices.length === 1 ? "notice" : "notices"}</span>
                 </div>
-                <NoticeCards notices={nr.notices.slice(0, shownNotices)} />
-                {nr.notices.length > shownNotices && (
-                  <button type="button" className="nr-load-more" onClick={() => setShownNotices((n) => n + NEWSROOM_PAGE)}>
-                    Show more notices <span className="num">({nr.notices.length - shownNotices} more)</span>
-                  </button>
-                )}
+                <NoticeCards notices={nr.notices.slice(noticesStart, noticesStart + NEWSROOM_PAGE)} start={noticesStart} />
+                <NewsroomPagination page={noticesPage} totalItems={nr.notices.length} pageSize={NEWSROOM_PAGE} onPageChange={setNoticesPage} label="Notices" />
               </section>
 
               <section className="newsroom-group" id="youtube" aria-labelledby="youtube-title">
@@ -891,11 +905,11 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                 </div>
                 {nr.youtube.length > 0 ? (
                   <div className="newsroom-videos">
-                    {nr.youtube.slice(0, shownVideos).map((video, index) => {
+                    {nr.youtube.slice(youtubeStart, youtubeStart + NEWSROOM_PAGE).map((video, index) => {
                       const id = getYouTubeId(video.url);
                       if (!id) return null;
                       return (
-                        <div className="newsroom-video" key={`${id}-${index}`}>
+                        <div className="newsroom-video" key={`${id}-${youtubeStart + index}`}>
                           <YouTubeVideo id={id} title={video.title} thumbnail={video.thumbnail} />
                         </div>
                       );
@@ -904,11 +918,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                 ) : (
                   <p className="newsroom-empty">Videos from across the group will appear here soon.</p>
                 )}
-                {nr.youtube.length > shownVideos && (
-                  <button type="button" className="nr-load-more" onClick={() => setShownVideos((n) => n + NEWSROOM_PAGE)}>
-                    Show more videos <span className="num">({nr.youtube.length - shownVideos} more)</span>
-                  </button>
-                )}
+                <NewsroomPagination page={youtubePage} totalItems={nr.youtube.length} pageSize={NEWSROOM_PAGE} onPageChange={setYoutubePage} label="YouTube videos" />
               </section>
 
               <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} pageSize={NEWSROOM_PAGE} />
@@ -1119,7 +1129,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                   <input className="contact-honeypot" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
                   <button className="contact-submit" type="submit">Send message <span aria-hidden="true">↗</span></button>
                   {contactNotice && <p className="contact-notice" role="status">{contactNotice}</p>}
-                  <small>Your message is sent securely to our team and used only to reply to your enquiry. See our <a href="/privacy-policy">Privacy Policy</a>.</small>
+                  <small>Your message is sent securely to our team and used only to reply to your enquiry. See our <Link href="/privacy-policy">Privacy Policy</Link>.</small>
                 </form>
               </div>
             </section>

@@ -1,7 +1,15 @@
-// Pure helpers used by the seed and the MongoDB migration. No database access,
-// so they are unit-tested directly (tests/seed-helpers.test.ts).
+// Pure helpers used by the seed. No database access, so they are unit-tested
+// directly (tests/seed-helpers.test.ts).
 
 import type { CompanyCategory, EmploymentType } from "@prisma/client";
+
+export function vacancySeedStatus(sample: boolean | undefined): "DRAFT" | "PUBLISHED" {
+  return sample ? "DRAFT" : "PUBLISHED";
+}
+
+export function vacancySeedUpdate(sample: boolean | undefined) {
+  return sample ? { status: "DRAFT" as const, publishedAt: null } : {};
+}
 
 export function toCompanyCategory(value: string): CompanyCategory {
   const map: Record<string, CompanyCategory> = {

@@ -76,15 +76,15 @@ export const applicationFormSchema = z.object({
   fullName: formText(2, 120, "Enter your full name."),
   email: z.string().trim().toLowerCase().max(200).email("Enter a valid email address."),
   phone: z.string().trim().regex(/^[+\d][\d\s-]{6,19}$/, "Enter a valid phone number."),
-  age: z.coerce.number({ invalid_type_error: "Enter your age (16 to 80)." }).int("Enter your age (16 to 80).").min(16, "Enter your age (16 to 80).").max(80, "Enter your age (16 to 80)."),
+  age: z.coerce.number({ error: "Enter your age (16 to 80)." }).int("Enter your age (16 to 80).").min(16, "Enter your age (16 to 80).").max(80, "Enter your age (16 to 80)."),
   gender: z.string().trim().max(30).optional().transform((v) => v || null),
   address: formText(2, 200, "Enter your address."),
   education: z.string().refine((value) => educationLevels.includes(value), "Choose your highest education."),
-  experienceYears: z.coerce.number({ invalid_type_error: "Enter your years of experience (0 to 60)." }).min(0, "Enter your years of experience (0 to 60).").max(60, "Enter your years of experience (0 to 60)."),
+  experienceYears: z.coerce.number({ error: "Enter your years of experience (0 to 60)." }).min(0, "Enter your years of experience (0 to 60).").max(60, "Enter your years of experience (0 to 60)."),
   currentEmployer: z.string().trim().max(150).optional().transform((v) => v || null),
   expectedSalary: z.string().trim().max(60).optional().transform((v) => v || null),
   coverLetter: z.string().trim().max(3000).optional().transform((v) => v || null),
-  consent: z.literal("yes", { errorMap: () => ({ message: "Please confirm that your details are correct." }) }),
+  consent: z.literal("yes", { error: "Please confirm that your details are correct." }),
 });
 
 export const applicationListQuery = z.object({

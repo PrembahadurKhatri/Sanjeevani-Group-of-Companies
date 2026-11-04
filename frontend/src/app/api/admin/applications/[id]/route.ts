@@ -1,54 +1,41 @@
-import mongoose from "mongoose";
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/admin-session";
-import { ApplicationModel } from "@/lib/application-model";
-import { connectToDatabase } from "@/lib/mongodb";
+import { z } from "zod";
+import { requirePermission } from "@/server/auth/guard";
+import { changeApplicationStatus, downloadApplicationDocument, getApplication } from "@/server/recruitment/applications";
+import { handle, notFound, readJson } from "@/server/http/errors";
+import { requestMeta } from "@/server/http/request";
 
 export const dynamic = "force-dynamic";
 
 // GET downloads the applicant's CV; PATCH marks the application reviewed or new.
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  if (!isAdminAuthenticated()) return NextResponse.json({ message: "Sign in to continue." }, { status: 401 });
-  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ message: "Application not found." }, { status: 404 });
+type Context = { params: { id: string } };
+const statusSchema = z.object({ status: z.enum(["new", "reviewed"]) }).strict();
 
-  try {
-    await connectToDatabase();
-    const application = await ApplicationModel.findById(params.id).select("cvData cvFileName cvMimeType").lean();
-    if (!application) return NextResponse.json({ message: "Application not found." }, { status: 404 });
-    const data = Buffer.from(application.cvData.buffer ?? application.cvData);
-    return new NextResponse(data, {
-      headers: {
-        "Content-Type": application.cvMimeType,
-        "Content-Disposition": `attachment; filename="${application.cvFileName.replace(/"/g, "")}"`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-      },
-    });
-  } catch (error) {
-    console.error("Could not load a CV:", error);
-    return NextResponse.json({ message: "Could not load the CV." }, { status: 503 });
-  }
-}
+export const GET = handle(async (request: Request, { params }: Context) => {
+  const user = await requirePermission(request, "application.read", "any");
+  const id = z.string().uuid().parse(params.id);
+  const meta = requestMeta(request);
+  const application = await getApplication(user, id, meta);
+  const cv = application.documents.find((document) => document.kind === "CV");
+  if (!cv) throw notFound("The application has no CV attached.");
+  const file = await downloadApplicationDocument(user, id, cv.id, meta);
+  const fileName = file.fileName.replace(/[\r\n"\\]/g, "_");
+  return new Response(new Uint8Array(file.bytes), {
+    headers: {
+      "Content-Type": file.mimeType,
+      "Content-Disposition": `attachment; filename="${fileName}"; filename*=UTF-8''${encodeURIComponent(file.fileName)}`,
+      "Cache-Control": "private, no-store",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "sandbox; default-src 'none'",
+    },
+  });
+});
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  if (!isAdminAuthenticated()) return NextResponse.json({ message: "Sign in to continue." }, { status: 401 });
-  if (!mongoose.isValidObjectId(params.id)) return NextResponse.json({ message: "Application not found." }, { status: 404 });
-
-  let body: { status?: unknown };
-  try {
-    body = (await request.json()) as { status?: unknown };
-  } catch {
-    return NextResponse.json({ message: "Invalid request." }, { status: 400 });
-  }
-  if (body.status !== "new" && body.status !== "reviewed") return NextResponse.json({ message: "Invalid status." }, { status: 400 });
-
-  try {
-    await connectToDatabase();
-    const updated = await ApplicationModel.findByIdAndUpdate(params.id, { status: body.status }, { new: true }).select("-cvData").lean();
-    if (!updated) return NextResponse.json({ message: "Application not found." }, { status: 404 });
-    return NextResponse.json({ data: updated });
-  } catch (error) {
-    console.error("Could not update an application:", error);
-    return NextResponse.json({ message: "Could not update the application." }, { status: 503 });
-  }
-}
+export const PATCH = handle(async (request: Request, { params }: Context) => {
+  const user = await requirePermission(request, "application.update", "any");
+  const id = z.string().uuid().parse(params.id);
+  const { status } = statusSchema.parse(await readJson(request));
+  const nextStatus = status === "new" ? "SUBMITTED" : "UNDER_REVIEW";
+  await changeApplicationStatus(user, id, { status: nextStatus }, requestMeta(request));
+  return NextResponse.json({ data: { _id: id, status } });
+});

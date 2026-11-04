@@ -8,7 +8,6 @@
 //   the user's memberships on the server.
 // - Relational data is modelled as tables; Json is used only for genuinely
 //   flexible content (rich-text blocks, settings values, audit metadata).
-// - `legacyMongoId` keeps the old MongoDB _id for traceable migration.
 
 generator client {
   provider = "prisma-client-js"
@@ -192,7 +191,6 @@ model Sector {
 
 model Company {
   id                String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  legacyMongoId     String?         @unique
   groupId           String          @db.Uuid
   group             Group           @relation(fields: [groupId], references: [id], onDelete: Restrict)
   sectorId          String?         @db.Uuid
@@ -695,7 +693,6 @@ model Vacancy {
 
 model JobApplication {
   id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  legacyMongoId   String?           @unique
   referenceNumber String            @unique // e.g. SG-2026-000123
   companyId       String?           @db.Uuid // scope for authorization; null only for a general application without a company
   company         Company?          @relation(fields: [companyId], references: [id], onDelete: Restrict)

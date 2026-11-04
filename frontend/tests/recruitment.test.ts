@@ -173,7 +173,7 @@ describe("validation", () => {
     assert.equal(applicationFormSchema.safeParse({ ...form, education: "PhD in hacking" }).success, false);
   });
   it("checks vacancy ranges", () => {
-    const base = { companyId: "11111111-1111-1111-1111-111111111111", title: "Staff Nurse", locationText: "Pokhara" };
+    const base = { companyId: "11111111-1111-4111-8111-111111111111", title: "Staff Nurse", locationText: "Pokhara" };
     assert.equal(vacancyCreateSchema.safeParse(base).success, true);
     assert.equal(vacancyCreateSchema.safeParse({ ...base, minAge: 40, maxAge: 20 }).success, false);
     assert.equal(vacancyCreateSchema.safeParse({ ...base, deadline: "30/11/2026" }).success, false);

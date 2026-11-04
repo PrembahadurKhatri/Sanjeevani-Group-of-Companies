@@ -15,7 +15,10 @@ const isNewsKind = (value: string): value is NewsKind => value in NEWS_KINDS;
 //   /newsroom/<kind>/<article>     one published news article or press release
 export const revalidate = 60;
 
-export async function generateMetadata({ params }: { params: { section: string; slug: string; item: string } }) {
+export async function generateMetadata(
+  props: { params: Promise<{ section: string; slug: string; item: string }> }
+) {
+  const params = await props.params;
   if (params.section === "businesses" && params.item === "preview") return { title: "Preview | Sanjeevani Group", robots: { index: false, follow: false } };
   if (params.section === "businesses") {
     const offering = await loadCompanyOffering(params.slug, params.item).catch(() => null);
@@ -29,7 +32,10 @@ export async function generateMetadata({ params }: { params: { section: string; 
   return { title: `${vacancy ? `${vacancy.title}, ${vacancy.company}` : "Careers"} | Sanjeevani Group of Companies` };
 }
 
-export default async function VacancyPage({ params }: { params: { section: string; slug: string; item: string } }) {
+export default async function VacancyPage(
+  props: { params: Promise<{ section: string; slug: string; item: string }> }
+) {
+  const params = await props.params;
   if (params.section === "businesses" && params.item === "preview") {
     if (!(await previewAllowed(params.slug))) notFound();
     const profile = await loadCompanyProfile(params.slug, { preview: true });

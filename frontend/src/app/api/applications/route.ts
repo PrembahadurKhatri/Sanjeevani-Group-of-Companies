@@ -8,8 +8,7 @@ import { submitApplication } from "@/server/recruitment/applications";
 
 export const dynamic = "force-dynamic";
 
-// Public job application (multipart). Same fields as the current
-// /api/careers/applications form, so the site switches by changing the URL.
+// Public job application (multipart), stored in PostgreSQL.
 export const POST = handle(async (request: Request) => {
   assertSameOrigin(request);
   const declared = Number(request.headers.get("content-length") ?? 0);

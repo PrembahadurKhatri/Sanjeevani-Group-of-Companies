@@ -9,7 +9,10 @@ import "./company-profile.css";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import VisitTracker from "@/components/VisitTracker";
 
+const siteOrigin = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://sanjeevani.com.np";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin),
   title: "Sanjeevani Group of Companies | One horizon, many ambitions",
   description:
     "Discover Sanjeevani Group and its businesses across healthcare, education, agriculture, infrastructure, and more.",

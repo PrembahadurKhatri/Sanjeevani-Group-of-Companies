@@ -10,19 +10,24 @@ import GroupEmblem from "@/components/GroupEmblem";
 import BusinessNavMenu from "@/components/BusinessNavMenu";
 import CareersNavMenu from "@/components/CareersNavMenu";
 import AboutNavMenu from "@/components/AboutNavMenu";
-import { companyNotices, latestEvents, latestPressReleases } from "@/data/newsroom";
 import SocialLinks from "@/components/SocialLinks";
 import NepalNetworkMap from "@/components/NepalNetworkMap";
 
 type DirectoryResponse = { data: Business[]; message?: string };
+type HomeStory = { image: string; alt: string; date: string; title: string; summary: string };
+type HomeNewsroom = {
+  pressReleases: HomeStory[];
+  events: HomeStory[];
+  notices: { company: string; date: string; title: string }[];
+};
 
 const slides = [
-  { label: "Hospital", theme: "hospital", image: "/business/business.png" },
-  { label: "Medical College", theme: "medical-college", image: "/medical%20college.jpg" },
-  { label: "Education", theme: "education", image: "/education.jpg" },
-  { label: "Agro", theme: "agro", image: "/agro.png" },
-  { label: "Construction", theme: "construction", image: "/construction.jpg" },
-  { label: "Hydro", theme: "hydro", image: "/hydro.png" },
+  { label: "Hospital", theme: "hospital", image: "/business/business.png", mobileImage: "/herosection/hospital.png" },
+  { label: "Medical College", theme: "medical-college", image: "/medical%20college.jpg", mobileImage: "/herosection/gmc.png" },
+  { label: "Education", theme: "education", image: "/education.jpg", mobileImage: "/herosection/education.png" },
+  { label: "Agro", theme: "agro", image: "/agro.png", mobileImage: "/herosection/agroo.png" },
+  { label: "Construction", theme: "construction", image: "/construction.jpg", mobileImage: "/herosection/construction.png" },
+  { label: "Hydro", theme: "hydro", image: "/hydro.png", mobileImage: "/herosection/hydro1.png" },
 ];
 const slideDuration = 3000;
 
@@ -32,8 +37,6 @@ const homeSections = [
   { id: "locations", label: "Locations" },
   { id: "impact", label: "Our impact" },
 ];
-
-const welcomeSectors = ["Healthcare", "Education", "Agriculture", "Infrastructure"];
 
 const navigation = [
   { label: "Home", href: "/" },
@@ -50,7 +53,70 @@ const introImages = [
   { src: "/education.jpg", alt: "Students learning at a Sanjeevani school" },
   { src: "/agro.png", alt: "Sanjeevani agriculture project" },
   { src: "/hydro.png", alt: "Sanjeevani hydropower project" },
+  { src: "/impact/impact.jpg", alt: "Community members working in hillside fields" },
 ];
+
+const homeDemoNewsroom: HomeNewsroom = {
+  pressReleases: [
+    {
+      image: "/hospital.jpg",
+      alt: "Sanjeevani hospital building",
+      date: "Demo preview",
+      title: "Community care, closer to home",
+      summary: "Sample homepage news content showing how a healthcare update can appear.",
+    },
+    {
+      image: "/medical%20college.jpg",
+      alt: "Medical college campus",
+      date: "Demo preview",
+      title: "Learning for the next generation",
+      summary: "Sample homepage news content highlighting education across the group.",
+    },
+    {
+      image: "/agro.png",
+      alt: "Agriculture project",
+      date: "Demo preview",
+      title: "Growing stronger communities",
+      summary: "Sample homepage news content for an agriculture story.",
+    },
+  ],
+  events: [
+    {
+      image: "/education.jpg",
+      alt: "Students at a school",
+      date: "Demo preview",
+      title: "A day of learning and discovery",
+      summary: "Sample event content for a school and community programme.",
+    },
+    {
+      image: "/impact/impact.jpg",
+      alt: "Community members working in hillside fields",
+      date: "Demo preview",
+      title: "Working together in our communities",
+      summary: "Sample event content celebrating local knowledge and collaboration.",
+    },
+    {
+      image: "/hydro.png",
+      alt: "Hydropower project",
+      date: "Demo preview",
+      title: "Building a more connected future",
+      summary: "Sample event content for a project milestone gathering.",
+    },
+  ],
+  notices: [
+    { company: "Demo preview · Sanjeevani Group", date: "Sample notice", title: "Homepage notice preview" },
+    { company: "Demo preview · Education", date: "Sample notice", title: "Programme announcement preview" },
+    { company: "Demo preview · Healthcare", date: "Sample notice", title: "Service update preview" },
+  ],
+};
+
+function NepalStatsEmblem() {
+  return (
+    <span className="nepal-stats-emblem" aria-hidden="true">
+      <Image src="/logo-emblem.png" alt="" fill sizes="48px" />
+    </span>
+  );
+}
 
 const keySectors = [
   {
@@ -151,9 +217,10 @@ function Brand() {
 }
 
 export default function HomePage() {
-  const [hasEntered, setHasEntered] = useState(false);
-  const [welcomeSector, setWelcomeSector] = useState(0);
   const [businesses, setBusinesses] = useState<Business[]>(localBusinesses);
+  const [homeNewsroom, setHomeNewsroom] = useState<HomeNewsroom>(
+    process.env.NODE_ENV === "development" ? homeDemoNewsroom : { pressReleases: [], events: [], notices: [] },
+  );
   const [slideIndex, setSlideIndex] = useState(0);
   const [introIndex, setIntroIndex] = useState(0);
   const [pillarIndex, setPillarIndex] = useState(0);
@@ -170,22 +237,6 @@ export default function HomePage() {
   const [statsCounts, setStatsCounts] = useState([0, 0, 0]);
 
   useEffect(() => {
-    document.body.style.overflow = hasEntered ? "" : "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [hasEntered]);
-
-  useEffect(() => {
-    const timeout = window.setTimeout(() => setHasEntered(true), 2700);
-    const rotation = window.setInterval(() => setWelcomeSector((index) => (index + 1) % welcomeSectors.length), 650);
-    return () => {
-      window.clearTimeout(timeout);
-      window.clearInterval(rotation);
-    };
-  }, []);
-
-  useEffect(() => {
     fetch("/api/businesses")
       .then(async (response) => {
         const result = (await response.json()) as DirectoryResponse;
@@ -198,17 +249,31 @@ export default function HomePage() {
         }
       })
       .catch((error: unknown) => {
-        console.error("Using the bundled company directory because MongoDB is unavailable.", error);
+        console.error("Using the bundled company directory because PostgreSQL is unavailable.", error);
       });
   }, []);
 
   useEffect(() => {
-    if (!hasEntered) return;
+    if (process.env.NODE_ENV === "development") return;
+    let active = true;
+    fetch("/api/newsroom")
+      .then(async (response) => {
+        const result = (await response.json()) as HomeNewsroom & { message?: string };
+        if (!response.ok) throw new Error(result.message ?? "Newsroom content unavailable.");
+        if (active) setHomeNewsroom(result);
+      })
+      .catch((error: unknown) => console.error("Could not load published homepage newsroom content.", error));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const interval = window.setInterval(() => {
       setSlideIndex((current) => (current + 1) % slides.length);
     }, slideDuration);
     return () => window.clearInterval(interval);
-  }, [hasEntered, slideIndex]);
+  }, [slideIndex]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -357,18 +422,20 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    if (homeNewsroom.pressReleases.length < 2) return;
     const interval = window.setInterval(() => {
-      setNewsSlide((current) => (current + 1) % latestPressReleases.length);
+      setNewsSlide((current) => (current + 1) % homeNewsroom.pressReleases.length);
     }, 3000);
     return () => window.clearInterval(interval);
-  }, [newsSlide]);
+  }, [homeNewsroom.pressReleases.length]);
 
   useEffect(() => {
+    if (homeNewsroom.events.length < 2) return;
     const interval = window.setInterval(() => {
-      setEventSlide((current) => (current + 1) % latestEvents.length);
+      setEventSlide((current) => (current + 1) % homeNewsroom.events.length);
     }, 3000);
     return () => window.clearInterval(interval);
-  }, [eventSlide]);
+  }, [homeNewsroom.events.length]);
 
   function scrollSectors(direction: number) {
     const track = sectorTrackRef.current;
@@ -380,36 +447,16 @@ export default function HomePage() {
 
   return (
     <>
-      {!hasEntered && (
-        <div className="welcome-screen">
-          <div className="welcome-lockup">
-            <div className="welcome-emblem">
-              <GroupEmblem />
-            </div>
-            <p className="welcome-name">Sanjeevani Group</p>
-            <p className="welcome-subtitle">OF COMPANIES</p>
-            <p className="welcome-sector" aria-hidden="true">
-              <span key={welcomeSector}>{welcomeSectors[welcomeSector]}</span>
-            </p>
-            <div className="welcome-progress" role="status" aria-label="Loading Sanjeevani Group">
-              <span className="welcome-progress-track" aria-hidden="true">
-                <span className="welcome-progress-fill" />
-              </span>
-              <span className="welcome-loading-label">WELCOME</span>
-            </div>
-          </div>
-        </div>
-      )}
-      <header className={`reference-header${headerScrolled ? " is-scrolled" : " is-overlay"}`}>
+      <header className={`reference-header${headerScrolled ? " is-scrolled" : " is-overlay"}${menuOpen ? " is-menu-open" : ""}`}>
         <div className="reference-wrap header-inner">
           <Brand />
           <nav className={`reference-nav${menuOpen ? " is-open" : ""}`} aria-label="Main navigation">
             {navigation.map((item) => item.label === "About us" ? (
-              <AboutNavMenu key={item.href} />
+              <AboutNavMenu key={item.href} onNavigate={() => setMenuOpen(false)} />
             ) : item.label === "Businesses" ? (
-              <BusinessNavMenu businesses={businesses} key={item.href} />
+              <BusinessNavMenu businesses={businesses} key={item.href} onNavigate={() => setMenuOpen(false)} />
             ) : item.label === "Careers" ? (
-              <CareersNavMenu businesses={businesses} key={item.href} />
+              <CareersNavMenu businesses={businesses} key={item.href} onNavigate={() => setMenuOpen(false)} />
             ) : (
               <a href={item.href} key={item.href} onClick={() => setMenuOpen(false)}>{item.label}</a>
             ))}
@@ -442,10 +489,18 @@ export default function HomePage() {
         <section id="home" className={`reference-hero home-hero hero-category-${slides[slideIndex].theme}`} aria-roledescription="carousel" aria-label="Sanjeevani Group business categories">
           <div
             key={slides[slideIndex].theme}
-            className="hero-category-photo"
+            className={`hero-category-photo${slides[slideIndex].mobileImage ? " hero-category-photo-desktop" : ""}`}
             aria-hidden="true"
             style={{ backgroundImage: `url("${slides[slideIndex].image}")` }}
           />
+          {slides[slideIndex].mobileImage && (
+            <div
+              key={`${slides[slideIndex].theme}-mobile`}
+              className="hero-category-photo hero-category-photo-mobile"
+              aria-hidden="true"
+              style={{ backgroundImage: `url("${slides[slideIndex].mobileImage}")` }}
+            />
+          )}
           <div className="hero-category-content" aria-live="polite">
             <h1>
               <span>SANJEEVANI GROUP</span>
@@ -521,14 +576,31 @@ export default function HomePage() {
                 Find a location near you <span aria-hidden="true">↗</span>
               </a>
               <small>Select a city marker to view its location in Google Maps.</small>
-              <div className="reference-stats locations-stats" ref={statsRef} aria-label="Sanjeevani Group at a glance">
-                <div><strong>{statsCounts[0]}</strong><span>Businesses in the group</span></div>
-                <div><strong>{statsCounts[1]}</strong><span>Areas of work</span></div>
-                <div><strong>{statsCounts[2]}</strong><span>Shared purpose</span></div>
-                <div><strong>Nepal</strong><span>Rooted in community</span></div>
-              </div>
             </div>
             <NepalNetworkMap drawOnScroll />
+            <div className="reference-stats locations-stats" ref={statsRef} aria-label="Sanjeevani Group at a glance">
+              <div>
+                <strong>{statsCounts[0]}</strong>
+                <span>Businesses in<br />the group</span>
+                <NepalStatsEmblem />
+              </div>
+              <div>
+                <strong>{String(statsCounts[1]).padStart(2, "0")}</strong>
+                <span>Areas of<br />work</span>
+                <NepalStatsEmblem />
+              </div>
+              <div>
+                <strong>{String(statsCounts[2]).padStart(2, "0")}</strong>
+                <span>Shared<br />purpose</span>
+                <NepalStatsEmblem />
+              </div>
+              <div>
+                <strong>Nepal</strong>
+                <span>Rooted in<br />community</span>
+                <NepalStatsEmblem />
+              </div>
+            </div>
+            <p className="locations-stats-caption">Crimson <span aria-hidden="true">•</span> deep blue <span aria-hidden="true">•</span> warm ivory</p>
           </div>
         </section>
 
@@ -615,24 +687,29 @@ export default function HomePage() {
         <section className="news-section" aria-labelledby="news-title">
           <div className="reference-wrap">
             <h2 id="news-title" className="news-title">In the News</h2>
+            {process.env.NODE_ENV === "development" && (
+              <p className="news-demo-note">Demo preview · sample stories, events and notices</p>
+            )}
             <div className="news-grid" data-reveal>
               <article className="news-feature">
                 <div className="news-feature-media">
-                  {latestPressReleases.map((release, index) => (
+                  {homeNewsroom.pressReleases.map((release, index) => (
                     <Image className={newsSlide === index ? "is-active" : ""} src={release.image} alt={newsSlide === index ? release.alt : ""} fill sizes="(max-width: 780px) 100vw, 30vw" key={release.title} />
                   ))}
-                  <div className="news-feature-dots">
-                    {latestPressReleases.map((release, index) => (
+                  {homeNewsroom.pressReleases.length > 1 && <div className="news-feature-dots">
+                    {homeNewsroom.pressReleases.map((release, index) => (
                       <button key={release.title} type="button" className={newsSlide === index ? "is-active" : ""} aria-label={`Show press release ${index + 1}`} aria-pressed={newsSlide === index} onClick={() => setNewsSlide(index)} />
                     ))}
-                  </div>
+                  </div>}
                 </div>
                 <Link className="news-feature-copy" href="/newsroom#press-releases">
                   <span className="news-label">Press release</span>
                   <div className="news-card-body" key={newsSlide} aria-live="polite">
-                    <span className="news-event-date">{latestPressReleases[newsSlide].date}</span>
-                    <h3>{latestPressReleases[newsSlide].title}</h3>
-                    <p className="news-quote">{latestPressReleases[newsSlide].summary}</p>
+                    {homeNewsroom.pressReleases[newsSlide] ? <>
+                      <span className="news-event-date">{homeNewsroom.pressReleases[newsSlide].date}</span>
+                      <h3>{homeNewsroom.pressReleases[newsSlide].title}</h3>
+                      <p className="news-quote">{homeNewsroom.pressReleases[newsSlide].summary}</p>
+                    </> : <p className="news-quote">No press releases have been published yet.</p>}
                   </div>
                   <span className="news-more">View all press releases <span aria-hidden="true">↗</span></span>
                 </Link>
@@ -641,13 +718,15 @@ export default function HomePage() {
               <article className="news-card news-card-company">
                 <span className="news-label">Notices</span>
                 <div className="news-card-body" key={noticeIndex} aria-live="polite">
-                  <h3>{companyNotices[noticeIndex].title}</h3>
-                  <p className="news-quote">
-                    {companyNotices[noticeIndex].company}
-                    <small>{companyNotices[noticeIndex].date}</small>
-                  </p>
+                  {homeNewsroom.notices[noticeIndex] ? <>
+                    <h3>{homeNewsroom.notices[noticeIndex].title}</h3>
+                    <p className="news-quote">
+                      {homeNewsroom.notices[noticeIndex].company}
+                      <small>{homeNewsroom.notices[noticeIndex].date}</small>
+                    </p>
+                  </> : <p className="news-quote">No notices have been published yet.</p>}
                 </div>
-                <button className="news-refresh" type="button" aria-label="Show another notice" onClick={() => setNoticeIndex((current) => (current + 1) % companyNotices.length)}>{refreshIcon}</button>
+                {homeNewsroom.notices.length > 1 && <button className="news-refresh" type="button" aria-label="Show another notice" onClick={() => setNoticeIndex((current) => (current + 1) % homeNewsroom.notices.length)}>{refreshIcon}</button>}
               </article>
 
               <article className="news-card news-card-facts">
@@ -661,21 +740,23 @@ export default function HomePage() {
 
               <article className="news-feature news-feature-events">
                 <div className="news-feature-media">
-                  {latestEvents.map((event, index) => (
+                  {homeNewsroom.events.map((event, index) => (
                     <Image className={eventSlide === index ? "is-active" : ""} src={event.image} alt={eventSlide === index ? event.alt : ""} fill sizes="(max-width: 780px) 100vw, 30vw" key={event.title} />
                   ))}
-                  <div className="news-feature-dots">
-                    {latestEvents.map((event, index) => (
+                  {homeNewsroom.events.length > 1 && <div className="news-feature-dots">
+                    {homeNewsroom.events.map((event, index) => (
                       <button key={event.title} type="button" className={eventSlide === index ? "is-active" : ""} aria-label={`Show event ${index + 1}`} aria-pressed={eventSlide === index} onClick={() => setEventSlide(index)} />
                     ))}
-                  </div>
+                  </div>}
                 </div>
                 <Link className="news-feature-copy" href="/newsroom#events">
                   <span className="news-label">Events</span>
                   <div className="news-card-body" key={eventSlide} aria-live="polite">
-                    <span className="news-event-date">{latestEvents[eventSlide].date}</span>
-                    <h3>{latestEvents[eventSlide].title}</h3>
-                    <p className="news-quote">{latestEvents[eventSlide].summary}</p>
+                    {homeNewsroom.events[eventSlide] ? <>
+                      <span className="news-event-date">{homeNewsroom.events[eventSlide].date}</span>
+                      <h3>{homeNewsroom.events[eventSlide].title}</h3>
+                      <p className="news-quote">{homeNewsroom.events[eventSlide].summary}</p>
+                    </> : <p className="news-quote">No events have been published yet.</p>}
                   </div>
                   <span className="news-more">View all events <span aria-hidden="true">↗</span></span>
                 </Link>
