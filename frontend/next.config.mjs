@@ -18,8 +18,8 @@ const privateHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Vercel requires the default ".next"; locally, dev and prod builds are kept apart.
-  distDir: process.env.VERCEL ? ".next" : process.env.NODE_ENV === "development" ? ".next-dev" : ".next-build",
+  // Production builds use the default ".next" (required by Vercel); dev uses its own folder.
+  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   poweredByHeader: false,
   // Native password hashing and SMTP load from node_modules at runtime.
   serverExternalPackages: ["@node-rs/argon2", "nodemailer"],
