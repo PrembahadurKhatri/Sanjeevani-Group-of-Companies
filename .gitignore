@@ -11,3 +11,7 @@ coverage/
 npm-debug.log*
 /company
 *.tsbuildinfo
+
+# Installers and archives never belong in the public web folder
+frontend/public/**/*.exe
+frontend/public/**/*.zip
