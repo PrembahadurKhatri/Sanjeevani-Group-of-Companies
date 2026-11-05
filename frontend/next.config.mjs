@@ -1,3 +1,5 @@
+import { PHASE_DEVELOPMENT_SERVER } from "next/constants.js";
+
 // Baseline security headers for every response. A full Content-Security-Policy
 // needs testing against the embedded YouTube / Facebook content and is added
 // once the admin UI is in place (Phase 7).
@@ -18,8 +20,6 @@ const privateHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Production builds use the default ".next" (required by Vercel); dev uses its own folder.
-  distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   poweredByHeader: false,
   // Native password hashing and SMTP load from node_modules at runtime.
   serverExternalPackages: ["@node-rs/argon2", "nodemailer"],
@@ -41,4 +41,8 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Only `next dev` uses its own folder; every build (incl. Vercel) uses the
+// default ".next", whatever NODE_ENV is set to.
+export default function config(phase) {
+  return { ...nextConfig, distDir: phase === PHASE_DEVELOPMENT_SERVER ? ".next-dev" : ".next" };
+}
