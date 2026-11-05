@@ -9,7 +9,7 @@ import { useEffect } from "react";
 const SELECTOR = [
   // Newsroom and Gallery
   ".nr-jump-band", ".newsroom-group-heading", ".newsroom-card", ".newsroom-notice", ".newsroom-video",
-  ".nr-photos li", ".nr-videos li", ".nr-story-main", ".nr-story-card", ".nr-share",
+  ".nr-photos li", ".nr-albums li", ".nr-videos li", ".nr-story-main", ".nr-story-card", ".nr-share",
   ".nr-tabs", ".nr-jump", ".nr-article-head", ".nr-article-cover", ".nr-article-body", ".nr-article-tags",
   ".nr-story-head", ".nr-story-meta", ".nr-story-gallery", ".nr-story-side", ".nr-story-related", ".nr-story-cta",
   ".newsroom-jump", ".newsroom-pagination", ".newsroom-contact",

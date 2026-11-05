@@ -1,5 +1,6 @@
 import Link from "next/link";
 import GroupEmblem from "@/components/GroupEmblem";
+import SocialLinks from "@/components/SocialLinks";
 
 const quickLinks = [
   { label: "Home", href: "/" },
@@ -40,6 +41,7 @@ export default function GroupFooter() {
         <section className="site-footer-main" aria-label="Footer navigation">
           <div className="site-footer-about">
             <p>Sanjeevani Group is a family of independent businesses across healthcare, education, agriculture, construction and hydropower. We grow with long-term thinking, disciplined execution and a commitment to Nepal.</p>
+            <SocialLinks className="site-footer-social" />
           </div>
 
           <div className="site-footer-column">

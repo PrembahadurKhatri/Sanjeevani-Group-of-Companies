@@ -151,6 +151,9 @@ export const companyNotices: CompanyNotice[] = [
 // under the photo and in the full-screen viewer.
 export type GalleryPhoto = { src: string; alt: string; caption: string };
 
+// A photo album: the photos of one event or programme, shown as one card.
+export type GalleryAlbum = { key: string; title: string; date?: string; photos: GalleryPhoto[] };
+
 export const galleryPhotos: GalleryPhoto[] = [
   { src: "/business/business.png", alt: "Aerial view of a Sanjeevani Group hospital campus", caption: "Hospital campus from above" },
   { src: "/key%20factor/medical.jpg", alt: "Doctors and students at a clinical training session", caption: "Clinical skills training" },

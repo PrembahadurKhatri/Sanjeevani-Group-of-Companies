@@ -2,7 +2,7 @@ import { prisma, isDatabaseConfigured } from "@/server/db";
 import { formatKathmandu } from "@/server/time";
 import {
   companyNotices, galleryPhotos, galleryVideos, latestEvents, latestNews, latestPressReleases, youtubeVideos,
-  type CompanyNotice, type GalleryPhoto, type GalleryVideo, type NewsroomStory,
+  type CompanyNotice, type GalleryAlbum, type GalleryPhoto, type GalleryVideo, type NewsroomStory,
 } from "@/data/newsroom";
 import { canUseBundledSamples } from "@/server/public/sample-content";
 
@@ -18,6 +18,7 @@ export type NewsroomData = {
   notices: CompanyNotice[];
   youtube: { url: string; title: string; thumbnail?: string }[];
   photos: GalleryPhoto[];
+  albums: GalleryAlbum[];
   galleryVideos: GalleryVideo[];
 };
 
@@ -47,6 +48,7 @@ const BUNDLED: NewsroomData = {
   notices: companyNotices.map((n) => ({ ...n, href: `/newsroom/notices/${storySlug(n.title)}` })),
   youtube: youtubeVideos,
   photos: galleryPhotos,
+  albums: [{ key: "across-the-group", title: "Across the group", photos: galleryPhotos }],
   galleryVideos,
 };
 
@@ -58,6 +60,7 @@ const EMPTY: NewsroomData = {
   notices: [],
   youtube: [],
   photos: [],
+  albums: [],
   galleryVideos: [],
 };
 
@@ -107,6 +110,12 @@ async function fromDatabase(): Promise<NewsroomData> {
     notices: notices.map((n) => ({ company: n.company?.name ?? "Sanjeevani Group", date: formatKathmandu(n.noticeDate), title: n.title, href: `/newsroom/notices/${n.id}` })),
     youtube: videos.filter((v) => v.placement === "NEWSROOM_YOUTUBE" && v.url).map((v) => ({ url: v.url!, title: v.title, thumbnail: v.thumbnail?.url })),
     photos: galleries.flatMap((g) => g.items.map((i) => ({ src: i.media.url, alt: i.altText, caption: i.caption }))),
+    albums: galleries.filter((g) => g.items.length > 0).map((g) => ({
+      key: g.slug,
+      title: g.title,
+      date: formatKathmandu(g.publishedAt ?? g.createdAt),
+      photos: g.items.map((i) => ({ src: i.media.url, alt: i.altText, caption: i.caption })),
+    })),
     galleryVideos: videos.filter((v) => v.placement === "GALLERY").flatMap((v): GalleryVideo[] =>
       v.url ? [{ kind: "youtube", url: v.url, title: v.title, thumbnail: v.thumbnail?.url }]
         : v.file ? [{ kind: "file", src: v.file.url, title: v.title, poster: v.thumbnail?.url }] : []),

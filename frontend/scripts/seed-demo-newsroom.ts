@@ -104,6 +104,19 @@ async function main() {
     { url: "/hydro.png", caption: "Demo photo: hydropower" },
     { url: "/construction.jpg", caption: "Demo photo: construction" },
   ]);
+  await gallery("DEMO: Sample album, community health camp", [
+    { url: "/aama.jpg", caption: "Demo photo: welcoming visitors" },
+    { url: "/impact/impact.jpg", caption: "Demo photo: in the community" },
+    { url: "/key%20factor/healthcare.jpg", caption: "Demo photo: health check-ups" },
+    { url: "/hospital.jpg", caption: "Demo photo: hospital team" },
+    { url: "/education.jpg", caption: "Demo photo: health awareness session" },
+  ]);
+  await gallery("DEMO: Sample album, hydropower site visit", [
+    { url: "/hydro.png", caption: "Demo photo: the project site" },
+    { url: "/key%20factor/hydro.jpg", caption: "Demo photo: spillway" },
+    { url: "/construction.png", caption: "Demo photo: construction progress" },
+    { url: "/agro.png", caption: "Demo photo: nearby farmland" },
+  ]);
 
   const video = "https://youtu.be/RqQ0nrcOzQk";
   await youtube("DEMO: Sample video 1", video, "/hospital.jpg", 0);

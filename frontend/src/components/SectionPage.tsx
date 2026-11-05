@@ -50,7 +50,7 @@ const mobilePageHeroImages: Record<string, string> = {
   community: "/mobilehero/community.png",
   "mission-vision-values": "/mobilehero/missionhero.png",
   newsroom: "/mobilehero/newss.png",
-  gallery: "/mobilehero/newss.png",
+  gallery: "/news/gallerymobile.png",
 };
 
 
@@ -449,7 +449,7 @@ const coreValues = [
 
 const EMPTY_NEWSROOM: NewsroomData = {
   noticeStories: [], pressReleases: [], news: [], events: [], notices: [],
-  youtube: [], photos: [], galleryVideos: [],
+  youtube: [], photos: [], albums: [], galleryVideos: [],
 };
 
 type SectionPageProps = {
@@ -685,7 +685,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
           <LegalDocument kind="faq" title={page.title} intro={page.intro} lead={page.lead} paragraphs={faqs.map((item) => item.answer)} titles={faqs.map((item) => item.question)} />
         ) : (
         <>
-        <section className={`section-page-hero${["about-us", "our-story", "mission-vision-values", "leadership", "team", "businesses", "newsroom", "reviews", "gallery", "community", "contact"].includes(section) ? " section-page-hero-clean" : ""}${section === "contact" ? " contact-page-hero" : ""}${section === "careers" ? " career-page-hero" : ""}${section === "businesses" ? " businesses-page-hero" : ""}${photoHero ? " mission-page-hero" : ""}${storyLayout ? " story-page-hero" : ""}${storyLayout ? " about-page-hero" : ""}${section === "about-us" ? " about-us-hero" : ""}${leadershipLayout ? " leadership-page-hero" : ""}${section === "leadership" ? " leadership-team-hero" : ""}${section === "mission-vision-values" ? " mvv-page-hero" : ""}${section === "community" ? " community-page-hero" : ""}${section === "newsroom" || section === "gallery" ? " newsroom-page-hero" : ""}${mobilePageHeroImage ? " has-mobile-page-hero" : ""}`}>
+        <section className={`section-page-hero${["about-us", "our-story", "mission-vision-values", "leadership", "team", "businesses", "newsroom", "reviews", "gallery", "community", "contact"].includes(section) ? " section-page-hero-clean" : ""}${section === "contact" ? " contact-page-hero" : ""}${section === "careers" ? " career-page-hero" : ""}${section === "businesses" ? " businesses-page-hero" : ""}${photoHero ? " mission-page-hero" : ""}${storyLayout ? " story-page-hero" : ""}${storyLayout ? " about-page-hero" : ""}${section === "about-us" ? " about-us-hero" : ""}${leadershipLayout ? " leadership-page-hero" : ""}${section === "leadership" ? " leadership-team-hero" : ""}${section === "mission-vision-values" ? " mvv-page-hero" : ""}${section === "community" ? " community-page-hero" : ""}${section === "newsroom" || section === "gallery" ? " newsroom-page-hero" : ""}${section === "gallery" ? " gallery-page-hero" : ""}${mobilePageHeroImage ? " has-mobile-page-hero" : ""}`}>
           <div className="hero-grid" aria-hidden="true" />
           <div className="section-page-orbit" aria-hidden="true" />
           {mobilePageHeroImage && (
@@ -860,7 +860,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
         ) : section === "gallery" ? (
           <section className="newsroom nr-gallery-page">
             <div className="reference-wrap">
-              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} heading="Photos and videos" pageSize={NEWSROOM_PAGE} />
+              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} albums={nr.albums} videos={nr.galleryVideos} heading="Photos and videos" pageSize={NEWSROOM_PAGE} />
             </div>
           </section>
         ) : section === "newsroom" ? (
@@ -921,7 +921,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
                 <NewsroomPagination page={youtubePage} totalItems={nr.youtube.length} pageSize={NEWSROOM_PAGE} onPageChange={setYoutubePage} label="YouTube videos" />
               </section>
 
-              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} videos={nr.galleryVideos} pageSize={NEWSROOM_PAGE} />
+              <NewsroomGallery renderYouTube={(id, title, thumbnail) => <YouTubeVideo id={id} title={title} thumbnail={thumbnail} />} photos={nr.photos} albums={nr.albums} videos={nr.galleryVideos} pageSize={NEWSROOM_PAGE} />
 
               <p className="newsroom-contact">For media enquiries, email <a href="mailto:info@sanjeevanigroup.com">info@sanjeevanigroup.com</a>.</p>
             </div>

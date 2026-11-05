@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { type KeyboardEvent, type ReactNode, useEffect, useRef, useState } from "react";
-import { getYouTubeId, type GalleryPhoto, type GalleryVideo } from "@/data/newsroom";
+import { getYouTubeId, type GalleryAlbum, type GalleryPhoto, type GalleryVideo } from "@/data/newsroom";
 import NewsroomPagination from "@/components/NewsroomPagination";
 
 type Tab = "photos" | "videos";
@@ -15,9 +15,13 @@ const remote = (src: string) => /^https?:\/\//.test(src);
 // (and, photos only, on company pages). `renderYouTube` is the Newsroom's own
 // click-to-play YouTube player, so every page behaves the same. `pageSize`
 // shows that many items first, with a Show more button adding that many again.
+// With `albums`, the Photos tab shows one card per album (an event or
+// programme); a card opens that album's photos, and a photo opens the viewer,
+// which then steps through that album only.
 export default function NewsroomGallery({
   renderYouTube,
   photos: galleryPhotos,
+  albums = [],
   videos: galleryVideos,
   pageSize,
   heading = "Gallery",
@@ -26,19 +30,28 @@ export default function NewsroomGallery({
 }: {
   renderYouTube: (id: string, title: string, thumbnail?: string) => ReactNode;
   photos: GalleryPhoto[];
+  albums?: GalleryAlbum[];
   videos: GalleryVideo[];
   pageSize?: number;
   heading?: string;
   idPrefix?: string;
   photosOnly?: boolean;
 }) {
+  const showAlbums = albums.length > 0;
   const [tab, setTab] = useState<Tab>("photos");
-  const effectivePageSize = pageSize ?? Math.max(galleryPhotos.length, galleryVideos.length, 1);
+  const effectivePageSize = pageSize ?? Math.max(galleryPhotos.length, albums.length, galleryVideos.length, 1);
   const [photoPage, setPhotoPage] = useState(1);
   const [videoPage, setVideoPage] = useState(1);
   const [open, setOpen] = useState<number | null>(null);
+  const [albumOpen, setAlbumOpen] = useState<number | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const albumRef = useRef<HTMLDialogElement>(null);
   const lastTrigger = useRef<HTMLButtonElement | null>(null);
+  const lastAlbumTrigger = useRef<HTMLButtonElement | null>(null);
+
+  const album = albumOpen === null ? null : albums[albumOpen] ?? null;
+  // The viewer steps through the open album, or through every photo.
+  const viewerPhotos = album ? album.photos : galleryPhotos;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -47,9 +60,16 @@ export default function NewsroomGallery({
     if (open === null && dialog.open) dialog.close();
   }, [open]);
 
+  useEffect(() => {
+    const dialog = albumRef.current;
+    if (!dialog) return;
+    if (albumOpen !== null && !dialog.open) dialog.showModal();
+    if (albumOpen === null && dialog.open) dialog.close();
+  }, [albumOpen]);
+
   function step(delta: number) {
-    if (galleryPhotos.length === 0) return;
-    setOpen((current) => (current === null ? current : (current + delta + galleryPhotos.length) % galleryPhotos.length));
+    if (viewerPhotos.length === 0) return;
+    setOpen((current) => (current === null ? current : (current + delta + viewerPhotos.length) % viewerPhotos.length));
   }
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>) {
@@ -60,7 +80,10 @@ export default function NewsroomGallery({
     document.getElementById(`${idPrefix}-tab-${next}`)?.focus();
   }
 
-  const photo = open === null ? null : galleryPhotos[open];
+  const photo = open === null ? null : viewerPhotos[open];
+  const photoCount = showAlbums ? albums.reduce((sum, a) => sum + a.photos.length, 0) : galleryPhotos.length;
+  const albumStart = (photoPage - 1) * effectivePageSize;
+  const visibleAlbums = albums.slice(albumStart, albumStart + effectivePageSize);
 
   // Every fifth photo spans two columns; the last one does too when that is what
   // it takes to fill the final row of the 3-column grid.
@@ -92,14 +115,53 @@ export default function NewsroomGallery({
               onKeyDown={onTabKey}
             >
               {value === "photos" ? "Photos" : "Videos"}
-              <span className="num">{value === "photos" ? galleryPhotos.length : galleryVideos.length}</span>
+              <span className="num">{value === "photos" ? photoCount : galleryVideos.length}</span>
             </button>
           ))}
         </div>}
       </div>
 
       <div id={`${idPrefix}-panel-photos`} role={photosOnly ? undefined : "tabpanel"} aria-labelledby={photosOnly ? undefined : `${idPrefix}-tab-photos`} hidden={tab !== "photos"}>
-        {galleryPhotos.length ? (
+        {showAlbums ? (
+          <>
+          <ul className="nr-albums">
+            {visibleAlbums.map((item, index) => (
+              <li key={item.key}>
+                <button
+                  type="button"
+                  className="nr-album"
+                  onClick={(event) => { lastAlbumTrigger.current = event.currentTarget; setAlbumOpen(albumStart + index); }}
+                  aria-label={`Open album: ${item.title}, ${item.photos.length} ${item.photos.length === 1 ? "photo" : "photos"}`}
+                >
+                  <span className="nr-album-cover">
+                    <Image src={item.photos[0].src} alt="" fill sizes="(max-width: 640px) 100vw, (max-width: 1050px) 50vw, 33vw" unoptimized={remote(item.photos[0].src)} />
+                    <span className="nr-album-count">
+                      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="15" height="13" rx="2" /><path d="M7 3h12a2 2 0 0 1 2 2v11" /></svg>
+                      <span className="num">{item.photos.length}</span> {item.photos.length === 1 ? "photo" : "photos"}
+                    </span>
+                  </span>
+                  <span className="nr-album-body">
+                    {item.date && <time>{item.date}</time>}
+                    <strong>{item.title}</strong>
+                    <span className="nr-album-foot">
+                      {item.photos.length > 1 && (
+                        <span className="nr-album-strip" aria-hidden="true">
+                          {item.photos.slice(1, 4).map((p, i) => (
+                            <span key={`${p.src}-${i}`}><Image src={p.src} alt="" fill sizes="40px" unoptimized={remote(p.src)} /></span>
+                          ))}
+                          {item.photos.length > 4 && <span className="nr-album-more num">+{item.photos.length - 4}</span>}
+                        </span>
+                      )}
+                      <span className="nr-album-cta">View album <span aria-hidden="true">→</span></span>
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <NewsroomPagination page={photoPage} totalItems={albums.length} pageSize={effectivePageSize} onPageChange={setPhotoPage} label="Albums" />
+          </>
+        ) : galleryPhotos.length ? (
           <>
           <ul className="nr-photos">
             {visiblePhotos.map((item, index) => (
@@ -156,6 +218,46 @@ export default function NewsroomGallery({
         )}
       </div>}
 
+      {showAlbums && (
+        <dialog
+          ref={albumRef}
+          className="nr-album-viewer"
+          aria-label={album ? `Photo album: ${album.title}` : "Photo album"}
+          onClose={() => { setOpen(null); setAlbumOpen(null); lastAlbumTrigger.current?.focus(); }}
+          onClick={(event) => { if (event.target === event.currentTarget) setAlbumOpen(null); }}
+        >
+          {album && (
+            <div className="nr-album-sheet">
+              <header className="nr-album-head">
+                <div>
+                  {album.date && <time>{album.date}</time>}
+                  <h3>{album.title}</h3>
+                  <p><span className="num">{album.photos.length}</span> {album.photos.length === 1 ? "photo" : "photos"}</p>
+                </div>
+                <button className="nr-album-close" type="button" onClick={() => setAlbumOpen(null)} aria-label="Close album">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                </button>
+              </header>
+              <ul className="nr-album-photos">
+                {album.photos.map((item, index) => (
+                  <li key={`${item.src}-${index}`}>
+                    <button
+                      type="button"
+                      className="nr-photo"
+                      onClick={(event) => { lastTrigger.current = event.currentTarget; setOpen(index); }}
+                      aria-label={`Open photo: ${item.caption}`}
+                    >
+                      <Image src={item.src} alt={item.alt} fill sizes="(max-width: 640px) 100vw, (max-width: 1050px) 50vw, 33vw" unoptimized={remote(item.src)} />
+                      <span className="nr-photo-caption">{item.caption}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </dialog>
+      )}
+
       <dialog
         ref={dialogRef}
         className="nr-viewer"
@@ -174,7 +276,7 @@ export default function NewsroomGallery({
             </div>
             <figcaption>
               <span>{photo.caption}</span>
-              <span className="num">{(open ?? 0) + 1} / {galleryPhotos.length}</span>
+              <span className="num">{(open ?? 0) + 1} / {viewerPhotos.length}</span>
             </figcaption>
           </figure>
         )}
