@@ -22,11 +22,11 @@ type HomeNewsroom = {
 };
 
 const slides = [
-  { label: "Hospital", theme: "hospital", image: "/business/business.png", mobileImage: "/herosection/hospital.png" },
+  { label: "Hospital", theme: "hospital", image: "/hospital.jpg", mobileImage: "/mobilehero/hospitalmobile.png" },
   { label: "Medical College", theme: "medical-college", image: "/medical%20college.jpg", mobileImage: "/herosection/gmc.png" },
   { label: "Education", theme: "education", image: "/education.jpg", mobileImage: "/herosection/education.png" },
   { label: "Agro", theme: "agro", image: "/agro.png", mobileImage: "/herosection/agroo.png" },
-  { label: "Construction", theme: "construction", image: "/construction.jpg", mobileImage: "/herosection/construction.png" },
+  { label: "Construction", theme: "construction", image: "/construction.png", mobileImage: "/herosection/constructionmobile.png" },
   { label: "Hydro", theme: "hydro", image: "/hydro.png", mobileImage: "/herosection/hydro1.png" },
 ];
 const slideDuration = 3000;
@@ -48,12 +48,12 @@ const navigation = [
   { label: "Contact", href: "/contact" },
 ];
 const introImages = [
-  { src: "/medical%20college.jpg", alt: "Sanjeevani medical college campus" },
   { src: "/hospital.jpg", alt: "Sanjeevani hospital" },
+  { src: "/medical%20college.jpg", alt: "Sanjeevani medical college campus" },
   { src: "/education.jpg", alt: "Students learning at a Sanjeevani school" },
   { src: "/agro.png", alt: "Sanjeevani agriculture project" },
+  { src: "/construction.png", alt: "Sanjeevani construction project" },
   { src: "/hydro.png", alt: "Sanjeevani hydropower project" },
-  { src: "/impact/impact.jpg", alt: "Community members working in hillside fields" },
 ];
 
 const homeDemoNewsroom: HomeNewsroom = {
@@ -249,7 +249,7 @@ export default function HomePage() {
         }
       })
       .catch((error: unknown) => {
-        console.error("Using the bundled company directory because PostgreSQL is unavailable.", error);
+        console.warn("Using the bundled company directory because PostgreSQL is unavailable.", error);
       });
   }, []);
 
@@ -600,7 +600,6 @@ export default function HomePage() {
                 <NepalStatsEmblem />
               </div>
             </div>
-            <p className="locations-stats-caption">Crimson <span aria-hidden="true">•</span> deep blue <span aria-hidden="true">•</span> warm ivory</p>
           </div>
         </section>
 

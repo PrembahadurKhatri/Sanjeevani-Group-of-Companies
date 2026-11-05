@@ -98,7 +98,8 @@ async function fromDatabase(): Promise<NewsroomData> {
     events: events.map((e) => ({
       image: e.coverImage?.url ?? "/education.jpg",
       alt: e.coverImage?.altText ?? e.title,
-      date: formatKathmandu(e.startsAt) + (e.venue ? `, ${e.venue}` : ""),
+      date: formatKathmandu(e.startsAt),
+      location: e.venue ?? undefined,
       title: e.title,
       summary: e.summary ?? "",
       href: `/newsroom/events/${e.slug}`,

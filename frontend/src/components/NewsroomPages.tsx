@@ -81,11 +81,21 @@ export function NewsroomCards({ stories }: { stories: Story[] }) {
             <time>{story.date}</time>
             <h3>{story.href ? <Link className="newsroom-card-title-link" href={story.href}>{story.title}</Link> : story.title}</h3>
             <p>{story.summary}</p>
-            {story.href ? (
-              <Link className="newsroom-card-link" href={story.href}>{readLabel(story.href)} <span aria-hidden="true">→</span></Link>
-            ) : story.link ? (
-              <a className="newsroom-card-link" href={story.link} target="_blank" rel="noopener noreferrer">Read more <span aria-hidden="true">↗</span></a>
-            ) : null}
+            {(story.href || story.link || story.location) && (
+              <div className="newsroom-card-foot">
+                {story.href ? (
+                  <Link className="newsroom-card-link" href={story.href}>{readLabel(story.href)} <span aria-hidden="true">→</span></Link>
+                ) : story.link ? (
+                  <a className="newsroom-card-link" href={story.link} target="_blank" rel="noopener noreferrer">Read more <span aria-hidden="true">↗</span></a>
+                ) : null}
+                {story.location && (
+                  <span className="newsroom-card-location">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.1-7-11a7 7 0 0 1 14 0c0 4.9-7 11-7 11Z" /><circle cx="12" cy="10" r="2.5" /></svg>
+                    {story.location}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </article>
       ))}

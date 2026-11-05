@@ -46,7 +46,7 @@ const navigation = [
 const mobilePageHeroImages: Record<string, string> = {
   "about-us": "/mobilehero/aboutus.png",
   "our-story": "/mobilehero/aboutus.png",
-  businesses: "/mobilehero/bus.png",
+  businesses: "/herosection/bus.png",
   community: "/mobilehero/community.png",
   "mission-vision-values": "/mobilehero/missionhero.png",
   newsroom: "/mobilehero/newss.png",
@@ -665,7 +665,7 @@ export default function SectionPage({ section, companySlug, leaderSlug, careerAr
 
       <GmailContactButton />
 
-      {animated && <ScrollReveal scope={`${section}/${newsKind?.key ?? ""}/${article?.title ?? ""}/${careerAreaSlug ?? ""}`} />}
+      {(animated || section === "mission-vision-values" || section === "businesses") && <ScrollReveal scope={`${section}/${newsKind?.key ?? ""}/${article?.title ?? ""}/${careerAreaSlug ?? ""}`} />}
       <main className={`section-page${animated ? " page-anim" : ""}${section === "businesses" ? " businesses-page" : ""}${photoHero ? " mission-page" : ""}${companySlug ? " company-page bx-scope cx" : ""}${leaderSlug ? " leader-page bx-scope ld" : ""}${careerAreaSlug ? " vacancy-page bx-scope vc" : ""}${!companySlug && (section === "privacy-policy" || section === "terms-of-use" || section === "faq") ? " legal-page bx-scope lg" : ""}`}>
         {companySlug && offering ? (
           <CompanyOfferingPage offering={offering} />

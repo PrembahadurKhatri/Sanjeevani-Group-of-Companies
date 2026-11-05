@@ -10,10 +10,19 @@ const SELECTOR = [
   // Newsroom and Gallery
   ".nr-jump-band", ".newsroom-group-heading", ".newsroom-card", ".newsroom-notice", ".newsroom-video",
   ".nr-photos li", ".nr-videos li", ".nr-story-main", ".nr-story-card", ".nr-share",
+  ".nr-tabs", ".nr-jump", ".nr-article-head", ".nr-article-cover", ".nr-article-body", ".nr-article-tags",
+  ".nr-story-head", ".nr-story-meta", ".nr-story-gallery", ".nr-story-side", ".nr-story-related", ".nr-story-cta",
+  ".newsroom-jump", ".newsroom-pagination", ".newsroom-contact",
   // Community
   ".community-foundation-copy", ".community-foundation-photo", ".community-gallery-photo", ".community-gallery-note",
+  ".section-page-highlights .section-overline", ".section-highlight-card",
   // Careers
   ".cr-intro", ".cr-toolbar", ".cr-card", ".cr-note", ".vc-list-head", ".vc-role",
+  // Mission, vision and values
+  ".mission-statement .reference-wrap", ".mission-feature-content", ".values-section h2", ".values-tabs",
+  ".value-card", ".mudra-copy", ".mudra-art",
+  // Businesses directory
+  ".bx-head", ".bx-sector", ".bx-panel-head", ".bx-company",
 ].join(",");
 
 export default function ScrollReveal({ scope }: { scope: string }) {

@@ -5,6 +5,7 @@ export type NewsroomStory = {
   title: string;
   summary: string;
   link?: string;
+  location?: string;
 };
 
 export type CompanyNotice = {
